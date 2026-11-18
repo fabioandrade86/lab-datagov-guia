@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guia do Lab: Databricks + Fabric + Purview para dados não estruturados</title>
+<meta name="description" content="Guia prático para montar, explorar e levar a cliente uma arquitetura de dados não estruturados com Azure Databricks, Microsoft Fabric e Microsoft Purview.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%276%27 fill=%27%230f6cbd%27/%3E%3Ctext x=%2716%27 y=%2722%27 font-size=%2716%27 text-anchor=%27middle%27 fill=%27white%27 font-family=%27sans-serif%27 font-weight=%27700%27%3EL%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <button class="btn small menu-toggle" id="menu-toggle" aria-label="Abrir menu">☰</button>
+  <div class="brand">Guia do Lab <small>Databricks · Fabric · Purview</small></div>
+  <div class="spacer"></div>
+  <div class="progress-pill" title="Módulos concluídos">
+    <span id="progress-label">0/11</span>
+    <div class="bar"><span id="progress-bar"></span></div>
+  </div>
+  <a class="btn small" href="#ambiente">Meu ambiente</a>
+</header>
+
+<div class="layout">
+<aside class="sidebar" id="sidebar">
+  <input class="search" id="search" type="search" placeholder="Buscar no guia…" aria-label="Buscar no guia">
+  <nav id="nav">
+    <div class="group">Começo</div>
+    <a href="#inicio">Início</a>
+    <a href="#arquitetura">Arquitetura alvo</a>
+    <a href="#ambiente">Meu ambiente</a>
+    <div class="group">Montagem do lab</div>
+    <a href="#montagem">Visão da trilha</a>
+    <div class="sub">
+      <a href="#m0" data-mod="m0">M0 · Fundamentos e checagem</a>
+      <a href="#m1" data-mod="m1">M1 · Unity Catalog</a>
+      <a href="#m2" data-mod="m2">M2 · Volumes e ingestão</a>
+      <a href="#m3" data-mod="m3">M3 · Extração com IA</a>
+      <a href="#m4" data-mod="m4">M4 · Pipeline automatizado</a>
+      <a href="#m5" data-mod="m5">M5 · Busca e RAG</a>
+      <a href="#m6" data-mod="m6">M6 · Fabric: mirroring</a>
+      <a href="#m7" data-mod="m7">M7 · Proteção de dados</a>
+      <a href="#m8" data-mod="m8">M8 · Governança e linhagem</a>
+      <a href="#m9" data-mod="m9">M9 · Rede e identidade</a>
+      <a href="#m10" data-mod="m10">M10 · Custos e limpeza</a>
+    </div>
+    <div class="group">Aprofundar</div>
+    <a href="#exploracao">Exploração guiada</a>
+    <a href="#recursos">Recursos e status</a>
+    <a href="#necessidades">Necessidades</a>
+    <div class="group">Mundo real</div>
+    <a href="#casos">Casos de uso</a>
+    <a href="#cenarios">Cenários e decisões</a>
+    <a href="#riscos">Riscos e lacunas</a>
+    <a href="#cliente">Levando ao cliente</a>
+    <div class="group">Referência</div>
+    <a href="#glossario">Glossário</a>
+    <a href="#fontes">Fontes</a>
+  </nav>
+</aside>
+
+<main id="main">
+
+<!-- ===================================================== INÍCIO -->
+<section class="page" id="inicio">
+  <div class="hero">
+    <h1>Dados não estruturados com Databricks, Fabric e Purview</h1>
+    <p>Guia prático para <strong>montar um lab</strong>, <strong>entender o porquê</strong> de cada decisão e <strong>levar a arquitetura a um cliente</strong>: PDFs, imagens, Word e PowerPoint são ingeridos e extraídos no Azure Databricks, governados no Unity Catalog, consumidos no Microsoft Fabric sem cópia e protegidos com Microsoft Purview.</p>
+    <div class="legend">
+      <span class="tag fato">FATO</span> verificado na documentação oficial
+      <span class="tag inf">INFERÊNCIA</span> leitura do autor
+      <span class="tag prem">PREMISSA</span> testar no lab
+      <span class="tag cost">CUSTO</span> liga recurso pago
+    </div>
+  </div>
+
+  <div class="grid c3">
+    <div class="card az">
+      <h4>1. Monte</h4>
+      <p class="small">Siga a trilha M0 a M10. Cada módulo tem conceito, passos com <em>onde clicar</em> e <em>o que esperar</em>, código pronto e um critério de "aprendi".</p>
+      <a class="btn small" href="#montagem">Abrir a trilha</a>
+    </div>
+    <div class="card fab">
+      <h4>2. Explore</h4>
+      <p class="small">Roteiros de exploração e experimentos "e se?" para quebrar o lab de propósito e entender limites, falhas e custos.</p>
+      <a class="btn small" href="#exploracao">Explorar</a>
+    </div>
+    <div class="card pur">
+      <h4>3. Leve ao cliente</h4>
+      <p class="small">Casos de uso, seletor de cenários (rede, licença, Purview, LGPD), riscos e o roteiro de descoberta com o cliente.</p>
+      <a class="btn small" href="#cenarios">Ver cenários</a>
+    </div>
+  </div>
+
+  <div class="callout warn">
+    <strong>Este site é público.</strong>
+    <p>Ele não contém nomes de assinatura, resource group ou dados de cliente. Use <a href="#ambiente">Meu ambiente</a> para preencher seus nomes: eles ficam salvos só no seu navegador e são aplicados em todos os códigos. Nunca use dados reais de cliente no lab sem alinhamento com o DPO (LGPD); prefira amostras sintéticas ou anonimizadas.</p>
+  </div>
+
+  <h3>Como estudar com este guia</h3>
+  <ul class="tight">
+    <li>Um módulo por vez. Leia o conceito, faça a prática, responda as perguntas de checagem e marque como concluído.</li>
+    <li>Recursos mudam rápido. Antes de afirmar status (GA, preview, beta), limite ou licença ao cliente, reconfira na <a href="#fontes">fonte</a>. Este guia foi verificado em <strong>18/11/2026</strong>.</li>
+    <li>O progresso fica salvo no navegador. Use <button class="btn small" id="export-progress">Copiar registro de progresso</button> para levar o estado para suas anotações.</li>
+  </ul>
+</section>
+
+<!-- ===================================================== ARQUITETURA -->
+<section class="page" id="arquitetura">
+  <h2>Arquitetura alvo</h2>
+  <p class="lead">Um documento entra como arquivo bruto, vira texto e campos estruturados no Databricks, aparece no Fabric sem cópia e é protegido nos dois lados.</p>
+
+  <div class="diagram" role="img" aria-label="Diagrama da arquitetura: arquivos chegam a um volume do Unity Catalog, passam por bronze, silver e gold no Databricks, são espelhados para o Fabric e consumidos no Power BI, com Purview protegendo o lado Fabric.">
+  <svg viewBox="0 0 1040 520" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" fill="currentColor" style="color: var(--muted)"/>
+      </marker>
+    </defs>
+    <!-- Entra ID -->
+    <rect class="zone-az" x="10" y="10" width="1020" height="44" rx="8"/>
+    <text x="24" y="38" class="t-az" font-size="14">Microsoft Entra ID</text>
+    <text x="190" y="38" font-size="13" class="muted">mesmos grupos nos dois lados · service principal para conexões · segredos no Key Vault</text>
+
+    <!-- Databricks zone -->
+    <rect class="zone-dbx" x="10" y="70" width="560" height="300" rx="10"/>
+    <text x="24" y="94" class="t-dbx" font-size="14">Azure Databricks · Unity Catalog</text>
+    <text x="24" y="112" font-size="12" class="muted">grants · row filters · column masks · linhagem · system tables</text>
+
+    <rect class="box" x="24" y="130" width="120" height="96" rx="8"/>
+    <text x="84" y="156" text-anchor="middle" font-size="13" font-weight="700">Pouso</text>
+    <text x="84" y="176" text-anchor="middle" font-size="11.5" class="muted">Volume raw</text>
+    <text x="84" y="192" text-anchor="middle" font-size="11.5" class="muted">PDF · imagens</text>
+    <text x="84" y="208" text-anchor="middle" font-size="11.5" class="muted">Word · PPT</text>
+
+    <rect class="box" x="164" y="130" width="120" height="96" rx="8"/>
+    <text x="224" y="156" text-anchor="middle" font-size="13" font-weight="700">Bronze</text>
+    <text x="224" y="176" text-anchor="middle" font-size="11.5" class="muted">inventário</text>
+    <text x="224" y="192" text-anchor="middle" font-size="11.5" class="muted">caminho · tipo</text>
+    <text x="224" y="208" text-anchor="middle" font-size="11.5" class="muted">tamanho · hash</text>
+
+    <rect class="box" x="304" y="130" width="120" height="96" rx="8"/>
+    <text x="364" y="156" text-anchor="middle" font-size="13" font-weight="700">Silver</text>
+    <text x="364" y="176" text-anchor="middle" font-size="11.5" class="muted">ai_parse_document</text>
+    <text x="364" y="192" text-anchor="middle" font-size="11.5" class="muted">texto · tabelas</text>
+    <text x="364" y="208" text-anchor="middle" font-size="11.5" class="muted">layout · erros</text>
+
+    <rect class="box" x="444" y="130" width="112" height="96" rx="8"/>
+    <text x="500" y="156" text-anchor="middle" font-size="13" font-weight="700">Gold</text>
+    <text x="500" y="176" text-anchor="middle" font-size="11.5" class="muted">ai_extract</text>
+    <text x="500" y="192" text-anchor="middle" font-size="11.5" class="muted">campos de negócio</text>
+    <text x="500" y="208" text-anchor="middle" font-size="11.5" class="muted">sem PII p/ consumo</text>
+
+    <path class="arrow" d="M144 178 H162" marker-end="url(#ah)"/>
+    <path class="arrow" d="M284 178 H302" marker-end="url(#ah)"/>
+    <path class="arrow" d="M424 178 H442" marker-end="url(#ah)"/>
+
+    <rect class="box" x="304" y="250" width="252" height="54" rx="8"/>
+    <text x="430" y="272" text-anchor="middle" font-size="12.5" font-weight="700">Busca / RAG (opcional)</text>
+    <text x="430" y="290" text-anchor="middle" font-size="11.5" class="muted">ai_prep_search · AI Search</text>
+    <path class="arrow" d="M364 226 V248" marker-end="url(#ah)"/>
+
+    <text x="24" y="330" font-size="12" class="t-bad">Lacuna: o DLP do Purview não inspeciona arquivos no Volume.</text>
+    <text x="24" y="348" font-size="12" class="muted">Ali, quem protege é o grant (READ VOLUME / WRITE VOLUME).</text>
+
+    <!-- Bridge -->
+    <path class="arrow" d="M556 178 H640" marker-end="url(#ah)"/>
+    <text x="598" y="152" text-anchor="middle" font-size="11" class="muted">EXTERNAL USE</text>
+    <text x="598" y="166" text-anchor="middle" font-size="11" class="muted">SCHEMA</text>
+
+    <!-- Fabric zone -->
+    <rect class="zone-fab" x="640" y="70" width="390" height="300" rx="10"/>
+    <text x="654" y="94" class="t-fab" font-size="14">Microsoft Fabric · OneLake</text>
+    <text x="654" y="112" font-size="12" class="muted">workspace roles · OneLake security · OneLake catalog</text>
+
+    <rect class="box" x="654" y="130" width="160" height="96" rx="8"/>
+    <text x="734" y="154" text-anchor="middle" font-size="12.5" font-weight="700">Mirrored Azure</text>
+    <text x="734" y="170" text-anchor="middle" font-size="12.5" font-weight="700">Databricks catalog</text>
+    <text x="734" y="190" text-anchor="middle" font-size="11.5" class="muted">só metadados</text>
+    <text x="734" y="206" text-anchor="middle" font-size="11.5" class="muted">dados via shortcut</text>
+
+    <rect class="box" x="834" y="130" width="182" height="96" rx="8"/>
+    <text x="925" y="156" text-anchor="middle" font-size="13" font-weight="700">Consumo</text>
+    <text x="925" y="176" text-anchor="middle" font-size="11.5" class="muted">SQL analytics endpoint</text>
+    <text x="925" y="192" text-anchor="middle" font-size="11.5" class="muted">lakehouse (shortcut)</text>
+    <text x="925" y="208" text-anchor="middle" font-size="11.5" class="muted">Power BI · Direct Lake</text>
+    <path class="arrow" d="M814 178 H832" marker-end="url(#ah)"/>
+
+    <text x="654" y="262" font-size="12" class="t-fab">Somente leitura no Fabric.</text>
+    <text x="654" y="280" font-size="12" class="muted">Escrita continua no Databricks.</text>
+    <text x="654" y="306" font-size="12" class="t-bad">Permissões do Unity Catalog não atravessam:</text>
+    <text x="654" y="324" font-size="12" class="muted">refaça o acesso com OneLake security e os</text>
+    <text x="654" y="342" font-size="12" class="muted">mesmos grupos do Entra ID.</text>
+
+    <!-- Purview -->
+    <rect class="zone-pur" x="640" y="390" width="390" height="120" rx="10"/>
+    <text x="654" y="414" class="t-pur" font-size="14">Microsoft Purview · segurança de dados</text>
+    <text x="654" y="438" font-size="12.5">Rótulos de sensibilidade · DLP para Fabric</text>
+    <text x="654" y="458" font-size="12.5">Audit · Insider Risk · protection policies</text>
+    <text x="654" y="484" font-size="12" class="muted">Atua sobre itens do Fabric: lakehouse, mirrored, modelos.</text>
+    <path class="arrow" d="M835 388 V230" marker-end="url(#ah)"/>
+
+    <!-- Governance retirement -->
+    <rect class="box" x="10" y="390" width="610" height="120" rx="10"/>
+    <text x="24" y="414" font-size="14" font-weight="700">Governança: onde mora o catálogo?</text>
+    <text x="24" y="438" font-size="12.5">Databricks: Unity Catalog (linhagem, tags, system tables).</text>
+    <text x="24" y="458" font-size="12.5">Fabric: OneLake catalog (Explore · Govern · Secure).</text>
+    <text x="24" y="478" font-size="12.5" class="t-bad">Purview Data Map / Unified Catalog: em aposentadoria,</text>
+    <text x="24" y="496" font-size="12.5" class="muted">sem contas novas, manutenção até 12/11/2027.</text>
+  </svg>
+  </div>
+
+  <h3>Onde cada controle atua</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Etapa</th><th>Onde o dado está</th><th>Quem controla o acesso</th><th>Purview atua?</th></tr></thead>
+    <tbody>
+      <tr><td>Pouso</td><td>Arquivo bruto no Volume</td><td>Grants do Unity Catalog no volume</td><td><strong>Não</strong>. É a principal lacuna.</td></tr>
+      <tr><td>Bronze / Silver</td><td>Tabela Delta com texto extraído</td><td>Grants, row filters e column masks</td><td>Não</td></tr>
+      <tr><td>Gold</td><td>Campos estruturados</td><td>Unity Catalog</td><td>Não</td></tr>
+      <tr><td>Mirroring</td><td>Metadados no Fabric, leitura via shortcut</td><td>Permissões do Fabric e OneLake security; a credencial da conexão faz as consultas</td><td>Começa aqui</td></tr>
+      <tr><td>Consumo</td><td>Lakehouse, SQL endpoint, Power BI</td><td>Workspace roles, OneLake security, rótulos</td><td>Rótulos, DLP, Audit, Insider Risk</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Fatos que mudam o desenho</h3>
+  <div class="grid c2">
+    <div class="card fab">
+      <h4><span class="tag fato">FATO</span> Permissões não atravessam</h4>
+      <p class="small">As políticas e permissões do Unity Catalog não são espelhadas no Fabric. A credencial usada para criar a conexão do mirroring é usada em todas as consultas. Se for a sua conta de admin, o Fabric enxerga tudo o que você enxerga.</p>
+    </div>
+    <div class="card fab">
+      <h4><span class="tag fato">FATO</span> Firewall no storage contorna filtros</h4>
+      <p class="small">Com <em>trusted workspace access</em> para ADLS atrás de firewall, o Fabric lê o storage diretamente. Nesse caminho, RLS/CLM ou ABAC do Unity Catalog não são aplicados.</p>
+    </div>
+    <div class="card fab">
+      <h4><span class="tag fato">FATO</span> Sem cópia, somente leitura</h4>
+      <p class="small">O mirroring do catálogo traz metadados e lê os dados via shortcut. Tabelas ficam somente leitura no Fabric e precisam ser Delta. Exige external data access no metastore e <code>EXTERNAL USE SCHEMA</code>.</p>
+    </div>
+    <div class="card pur">
+      <h4><span class="tag fato">FATO</span> Purview tem duas metades</h4>
+      <p class="small">Segurança de dados (rótulos, DLP, Audit, Insider Risk) segue integrada ao Fabric. Governança (Data Map, Unified Catalog) está em aposentadoria, consolidando no Fabric.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================================================== AMBIENTE -->
+<section class="page" id="ambiente">
+  <h2>Meu ambiente</h2>
+  <p class="lead">Preencha com os nomes do seu lab. Os valores ficam só no seu navegador e substituem os marcadores em todos os blocos de código.</p>
+  <form class="env-form" id="env-form" autocomplete="off">
+    <label>Catálogo<input name="CATALOG" placeholder="lab_datagov"></label>
+    <label>Workspace Databricks<input name="WS_DBX" placeholder="dbw-lab-datagov"></label>
+    <label>Resource group<input name="RG" placeholder="rg-lab-datagov"></label>
+    <label>Região Azure<input name="REGION" placeholder="eastus2"></label>
+    <label>Grupo admins (Entra ID)<input name="GRP_ADMIN" placeholder="grp-lab-datagov-admins"></label>
+    <label>Grupo engenharia<input name="GRP_ENG" placeholder="grp-lab-datagov-engenharia"></label>
+    <label>Grupo leitura<input name="GRP_READ" placeholder="grp-lab-datagov-leitura"></label>
+    <label>Service principal do mirroring<input name="SP_FABRIC" placeholder="sp-lab-fabric-mirror"></label>
+    <label>Workspace Fabric<input name="FABRIC_WS" placeholder="ws-lab-datagov"></label>
+    <label>Storage account (ADLS Gen2)<input name="STORAGE" placeholder="stlabdatagov"></label>
+    <label>Owner (tag)<input name="OWNER" placeholder="seu.email@empresa.com"></label>
+    <label>Data de expiração (tag)<input name="EXPIRA" placeholder="2026-12-31"></label>
+  </form>
+  <p class="small muted" style="margin-top:10px">Campos vazios usam o valor de exemplo. <button class="btn small" type="button" id="env-reset">Limpar valores</button></p>
+</section>
+
+<!-- ===================================================== MONTAGEM -->
+<section class="page" id="montagem">
+  <h2>Montagem do lab: trilha M0 a M10</h2>
+  <p class="lead">Ordem por dependência, não por prazo. Cada módulo libera o seguinte.</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Módulo</th><th>Depende de</th><th>Esforço</th><th>Liga compute pago?</th></tr></thead>
+    <tbody>
+      <tr><td>M0 Fundamentos e checagem</td><td>—</td><td>Baixo</td><td>Não</td></tr>
+      <tr><td>M1 Unity Catalog</td><td>M0</td><td>Baixo</td><td>Sim, para rodar SQL</td></tr>
+      <tr><td>M2 Volumes e ingestão</td><td>M1</td><td>Baixo</td><td>Sim</td></tr>
+      <tr><td>M3 Extração com IA</td><td>M2</td><td>Médio</td><td>Sim, cobra por documento (AI Functions)</td></tr>
+      <tr><td>M4 Pipeline automatizado</td><td>M3</td><td>Médio</td><td>Sim</td></tr>
+      <tr><td>M5 Busca e RAG (opcional)</td><td>M3</td><td>Médio</td><td>Sim, endpoint de AI Search</td></tr>
+      <tr><td>M6 Fabric: mirroring</td><td>M3 (gold pronta) + external data access</td><td>Médio</td><td>Sim, capacidade Fabric</td></tr>
+      <tr><td>M7 Proteção de dados</td><td>M6</td><td>Alto</td><td>DLP consome capacidade</td></tr>
+      <tr><td>M8 Governança e linhagem</td><td>M3, M6</td><td>Baixo</td><td>Pouco</td></tr>
+      <tr><td>M9 Rede e identidade</td><td>M6</td><td>Alto (no cliente)</td><td>Depende do desenho</td></tr>
+      <tr><td>M10 Custos e limpeza</td><td>Todos</td><td>Baixo</td><td>Não; é o que desliga</td></tr>
+    </tbody>
+  </table></div>
+
+  <!-- ---------------- M0 -->
+  <details class="module" id="m0" data-mod="m0">
+    <summary><span class="mnum">M0</span><span class="mtitle">Fundamentos e checagem do ambiente</span><span class="mmeta"><span class="tag az">Azure</span><span class="tag dbx">Databricks</span><span class="tag fab">Fabric</span><span class="tag pur">Purview</span></span></summary>
+    <div class="mbody">
+      <dl class="kv">
+        <dt>Objetivo</dt><dd>Entender o papel de cada peça e levantar o que falta no lab.</dd>
+        <dt>Analogia</dt><dd>Um condomínio. <strong>Azure</strong> é o terreno (rede, storage, identidade, cobrança). <strong>Databricks</strong> é a oficina que transforma o dado; o <strong>Unity Catalog</strong> é a portaria dela. <strong>Fabric</strong> é a vitrine e o escritório onde o negócio consome. <strong>Purview</strong> é a segurança e o compliance.</dd>
+        <dt>Custo</dt><dd>Nenhum, se usar o account console.</dd>
+      </dl>
+
+      <h4>Checklist do ambiente</h4>
+      <ol class="steps">
+        <li><span class="where">Account console Databricks · Workspaces</span><br>Acesse <code>https://accounts.azuredatabricks.net</code>, clique em <strong>Workspaces</strong> e localize <span class="v" data-k="WS_DBX"></span>. Leia a coluna <strong>Metastore</strong>.
+          <span class="expect">um nome de metastore. Workspaces criados após 09/11/2023 são habilitados para Unity Catalog automaticamente.</span></li>
+        <li><span class="where">Account console · Catalog · (metastore) · Configuration</span><br>Anote <strong>Metastore Admin</strong>, <strong>ADLS Gen 2 path</strong>, auto-assign de workspaces e OpenSharing. Na aba <strong>Workspaces</strong>, veja quantos workspaces dividem o metastore.
+          <span class="expect">em metastore criado automaticamente, o Metastore Admin pode estar vazio. Isso é normal, mas afeta o M6 (external data access é ligado por metastore admin).</span></li>
+        <li><span class="where">Account console · User management · Groups</span><br>Procure os grupos <span class="v" data-k="GRP_ADMIN"></span>, <span class="v" data-k="GRP_ENG"></span> e <span class="v" data-k="GRP_READ"></span>.
+          <span class="expect">os grupos só aparecem se existirem no Entra ID e estiverem sincronizados com a conta Databricks.</span></li>
+        <li><span class="where">Workspace Databricks · Catalog · ⚙ · Metastore · Details</span><br>Veja se a opção <strong>External data access</strong> aparece e está ligada.
+          <span class="expect">desligada por padrão. Se a opção nem aparece, você não tem privilégio para alterá-la.</span></li>
+        <li><span class="where">Workspace Databricks · SQL Warehouses</span><br>Veja se já existe um warehouse e qual é o auto-stop.
+          <span class="expect">se existir, auto-stop curto (10 min ou menos). Não crie ainda; o dimensionamento fica para o M1.</span></li>
+        <li><span class="where">Portal do Fabric · Configurações · Admin portal / Capacity settings</span><br>Confirme se existe capacidade (F SKU ou trial) e se você pode criar o workspace <span class="v" data-k="FABRIC_WS"></span>.
+          <span class="expect">sem capacidade não há mirroring. Recursos como trusted workspace access e pause/resume exigem F SKU.</span></li>
+        <li><span class="where">Portal do Purview · Settings · Roles / Licenças no Microsoft 365 admin</span><br>Verifique se há licença para rótulos e DLP no Fabric (M365 E5, E5 Compliance, E5 Information Protection &amp; Governance ou Purview capacities) e se você tem papel de Compliance/Information Protection admin.
+          <span class="expect">sem licença, o M7 vira proteção só por Unity Catalog e OneLake security.</span></li>
+        <li><span class="where">Portal Azure · Workspace Databricks · Networking</span><br>Veja se o acesso público ao front-end está habilitado, se há VNet injection e private endpoints.
+          <span class="expect">com rede aberta o mirroring funciona direto; com private endpoint precisa de VNet data gateway (M9).</span></li>
+        <li><span class="where">Portal Azure · Resource group · Tags</span><br>Confira as tags obrigatórias (projeto, ambiente, owner, expira). Se a tag <code>expira</code> estiver vencida, atualize antes de investir tempo no lab.
+          <span class="expect">se houver automação que remove recursos expirados, o lab pode sumir.</span></li>
+      </ol>
+
+      <div class="code" data-lang="bash"><div class="code-head"><span class="where">Azure CLI · Cloud Shell</span><button class="copy">Copiar</button></div><pre><code><span class="c-com"># Atualiza as tags do workspace sem apagar as existentes (Merge)</span>
+WS_ID=$(az databricks workspace show -g {{RG}} -n {{WS_DBX}} --query id -o tsv)
+az tag update --resource-id "$WS_ID" --operation Merge \
+  --tags expira={{EXPIRA}} owner={{OWNER}} ambiente=lab projeto=lab-datagov
+
+<span class="c-com"># Confere o resultado</span>
+az tag list --resource-id "$WS_ID" -o table</code></pre></div>
+
+      <div class="code" data-lang="sql"><div class="code-head"><span class="where">Databricks · SQL Editor (liga compute)</span><button class="copy">Copiar</button></div><pre><code><span class="c-com">-- Alternativa ao account console: confirma o metastore do workspace</span>
+SELECT CURRENT_METASTORE();
+<span class="c-com">-- Lista catálogos visíveis: espere o workspace catalog, "system" e "samples"</span>
+SHOW CATALOGS;</code></pre></div>
+
+      <h4>Ficha para registrar</h4>
+      <div class="code" data-lang="text"><div class="code-head"><span class="where">Anotações</span><button class="copy">Copiar</button></div><pre><code>Metastore: nome = ____ | região = ____ | ID = ____
+Metastore Admin: ____ (ou vazio)
+ADLS Gen2 path do metastore: ____ (ou vazio)
+Auto-assign: sim/não | OpenSharing: sim/não | Workspaces no metastore: ____
+External data access: ligado/desligado/sem permissão
+Grupos no account console: admins sim/não | engenharia sim/não | leitura sim/não
+SQL Warehouse: existe sim/não | auto-stop: ____ min
+Fabric: capacidade ____ (F SKU / trial / nenhuma)
+Purview: licença DLP/rótulos ____ | papel ____
+Rede: acesso público front-end sim/não | VNet injection sim/não | private endpoint sim/não</code></pre></div>
+
+      <details class="quiz"><summary>Perguntas de checagem</summary><ol>
+        <li>Por que o Unity Catalog é pré-requisito de quase tudo neste lab?<div class="ans">Volumes, AI Functions sobre arquivos, grants e o mirroring para o Fabric dependem de um workspace ligado a um metastore.</div></li>
+        <li>Qual metade do Purview entra neste projeto e por quê?<div class="ans">Segurança de dados (rótulos, DLP, Audit). A governança (Data Map, Unified Catalog) está em aposentadoria e não aceita contas novas.</div></li>
+        <li>O que um Metastore Admin vazio significa e quando passa a importar?<div class="ans">Metastore criado automaticamente. Importa quando é preciso ligar external data access ou transferir posse de objetos de terceiros.</div></li>
+        <li>Que pergunta de rede você faz antes de prometer mirroring?<div class="ans">O workspace tem private endpoint / acesso público desligado? Se sim, precisa de VNet data gateway.</div></li>
+      </ol></details>
+      <div class="callout"><strong>No cliente</strong><p>Este checklist vira o "levantamento técnico" da primeira reunião. Cada "não" é uma dependência com dono do lado do cliente (rede, licença, identidade).</p></div>
+      <label class="check-row"><input type="checkbox" data-done="m0"> Aprendi quando: explico as quatro peças em 2 minutos e tenho a lista do que falta.</label>
+    </div>
+  </details>
+
+  <!-- ---------------- M1 -->
+  <details class="module" id="m1" data-mod="m1">
+    <summary><span class="mnum">M1</span><span class="mtitle">Unity Catalog na prática</span><span class="mmeta"><span class="tag dbx">Databricks</span><span class="tag cost">CUSTO</span></span></summary>
+    <div class="mbody">
+      <dl class="kv">
+        <dt>Objetivo</dt><dd>Hierarquia catálogo → schema → tabela/volume; managed vs external; storage credential e external location; grants por grupo.</dd>
+        <dt>Analogia</dt><dd>Prédio (catálogo) → andar (schema) → salas (tabelas e volumes). A chave de um andar não abre outro, e para entrar numa sala é preciso também poder entrar no prédio e no andar (<code>USE CATALOG</code>, <code>USE SCHEMA</code>).</dd>
+        <dt>Custo</dt><dd>Rodar SQL liga um SQL Warehouse ou cluster. Use o menor tamanho e auto-stop curto.</dd>
+      </dl>
+      <div class="callout"><strong><span class="tag fato">FATO</span> Boas práticas oficiais</strong>
+        <p>Atribua papéis de admin e posse de objetos a <strong>grupos</strong>. Metastore admin é opcional: atribua só se precisar. Cuidado com <code>ALL PRIVILEGES</code>: ele não inclui <code>MANAGE</code>, <code>EXTERNAL USE LOCATION</code> nem <code>EXTERNAL USE SCHEMA</code>.</p></div>
+
+      <ol class="steps">
+        <li><span class="where">Databricks · SQL Warehouses</span><br>Crie (ou use) um warehouse <strong>Serverless</strong> do menor tamanho, auto-stop de 5 a 10 min.
+          <span class="expect">status Running em poucos segundos. Ele para sozinho após o tempo ocioso.</span></li>
+        <li><span class="where">Databricks · SQL Editor</span><br>Rode o bloco abaixo para criar catálogo e schemas.
+          <span class="expect">o catálogo aparece no Catalog Explorer. Se o metastore não tem storage raiz, o CREATE CATALOG pede MANAGED LOCATION.</span></li>
+        <li><span class="where">Databricks · SQL Editor</span><br>Aplique os grants por grupo e transfira a posse para o grupo admin.
+          <span class="expect"><code>SHOW GRANTS</code> mostra só grupos, nenhum usuário individual.</span></li>
+        <li><span class="where">Catalog Explorer · catálogo · Workspaces</span><br>Avalie restringir o catálogo a este workspace (workspace-catalog binding).
+          <span class="expect">por padrão, catálogos são acessíveis de qualquer workspace ligado ao metastore.</span></li>
+      </ol>
+
+      <div class="code" data-lang="sql"><div class="code-head"><span class="where">Databricks · SQL Editor</span><button class="copy">Copiar</button></div><pre><code><span class="c-com">-- 1) Catálogo do lab.
+--    Se o metastore NÃO tem storage raiz, descomente MANAGED LOCATION
+--    (o caminho precisa estar coberto por uma external location).</span>
+CREATE CATALOG IF NOT EXISTS {{CATALOG}}
+  <span class="c-com">-- MANAGED LOCATION 'abfss://lab@{{STORAGE}}.dfs.core.windows.net/{{CATALOG}}'</span>
+  COMMENT 'Lab de dados não estruturados (Databricks + Fabric + Purview)';
+
+<span class="c-com">-- 2) Camadas do medalhão</span>
+CREATE SCHEMA IF NOT EXISTS {{CATALOG}}.raw    COMMENT 'Pouso de arquivos brutos (volumes)';
+CREATE SCHEMA IF NOT EXISTS {{CATALOG}}.bronze COMMENT 'Inventário de arquivos';
+CREATE SCHEMA IF NOT EXISTS {{CATALOG}}.silver COMMENT 'Conteúdo extraído (ai_parse_document)';
+CREATE SCHEMA IF NOT EXISTS {{CATALOG}}.gold   COMMENT 'Campos de negócio e tabelas de consumo';
+
+<span class="c-com">-- 3) Posse para o grupo admin (nunca para uma pessoa)</span>
+ALTER CATALOG {{CATALOG}} OWNER TO `{{GRP_ADMIN}}`;
+
+<span class="c-com">-- 4) Engenharia: lê e escreve em todas as camadas</span>
+GRANT USE CATALOG ON CATALOG {{CATALOG}} TO `{{GRP_ENG}}`;
+GRANT USE SCHEMA, CREATE TABLE, CREATE VOLUME, SELECT, MODIFY
+  ON SCHEMA {{CATALOG}}.raw    TO `{{GRP_ENG}}`;
+GRANT USE SCHEMA, CREATE TABLE, SELECT, MODIFY ON SCHEMA {{CATALOG}}.bronze TO `{{GRP_ENG}}`;
+GRANT USE SCHEMA, CREATE TABLE, SELECT, MODIFY ON SCHEMA {{CATALOG}}.silver TO `{{GRP_ENG}}`;
+GRANT USE SCHEMA, CREATE TABLE, CREATE FUNCTION, SELECT, MODIFY
+  ON SCHEMA {{CATALOG}}.gold TO `{{GRP_ENG}}`;
+
+<span class="c-com">-- 5) Leitura: só a gold (princípio do menor privilégio)</span>
+GRANT USE CATALOG ON CATALOG {{CATALOG}} TO `{{GRP_READ}}`;
+GRANT USE SCHEMA, SELECT ON SCHEMA {{CATALOG}}.gold TO `{{GRP_READ}}`;
+
+<span class="c-com">-- 6) Conferência: quem acessa o quê</span>
+SHOW GRANTS ON CATALOG {{CATALOG}};
+SHOW GRANTS ON SCHEMA {{CATALOG}}.gold;</code></pre></div>
+
+      <h4>Managed vs external, em uma frase</h4>
+      <ul class="tight">
+        <li><strong>Managed</strong>: o Unity Catalog decide onde guardar e governa todo acesso. Ao apagar, o dado é removido (volumes managed retêm 7 dias). Padrão recomendado.</li>
+        <li><strong>External</strong>: você aponta um caminho existente. Útil quando outro sistema também lê ou escreve ali, mas esse sistema pode contornar o Unity Catalog.</li>
+        <li><strong>Storage credential</strong> guarda a identidade (managed identity do Access Connector) e a <strong>external location</strong> liga essa identidade a um caminho ADLS.</li>
+      </ul>
+
+      <details class="quiz"><summary>Perguntas de checagem</summary><ol>
+        <li>Um usuário tem <code>SELECT</code> numa tabela da gold mas não consegue consultar. O que falta?<div class="ans"><code>USE CATALOG</code> no catálogo e/ou <code>USE SCHEMA</code> no schema.</div></li>
+        <li>Por que transferir a posse do catálogo para um grupo?<div class="ans">O dono pode conceder qualquer privilégio. Se a pessoa sair, a administração não fica órfã.</div></li>
+        <li><code>ALL PRIVILEGES</code> no schema gold libera o mirroring para o Fabric?<div class="ans">Não. <code>EXTERNAL USE SCHEMA</code> não está incluído e precisa ser concedido explicitamente.</div></li>
+        <li>Quando você escolheria um volume external?<div class="ans">Quando outro sistema (por exemplo, um app do cliente) deposita arquivos naquele caminho e você quer governar o acesso pelo Databricks.</div></li>
+      </ol></details>
+      <div class="callout"><strong>No cliente</strong><p>Peça o resultado de <code>SHOW GRANTS</code> nos catálogos de produção. Grants para usuários individuais, <code>ALL PRIVILEGES</code> espalhado e catálogos com dono pessoa são achados de governança imediatos.</p></div>
+      <label class="check-row"><input type="checkbox" data-done="m1"> Aprendi quando: explico quem acessa o quê e por quê, só olhando os grants.</label>
+    </div>
+  </details>
+
+  <!-- ---------------- M2 -->
+  <details class="module" id="m2" data-mod="m2">
+    <summary><span class="mnum">M2</span><span class="mtitle">Volumes e ingestão de arquivos</span><span class="mmeta"><span class="tag dbx">Databricks</span><span class="tag cost">CUSTO</span></span></summary>
+    <div class="mbody">
+      <dl class="kv">
+        <dt>Objetivo</dt><dd>Guardar e listar arquivos não estruturados com controle de acesso e montar a bronze de inventário.</dd>
+        <dt>Analogia</dt><dd>O volume é um arquivo morto com fechadura do Unity Catalog. A bronze é o livro de protocolo: registra cada documento que entrou (o quê, tamanho, impressão digital, quando).</dd>
+        <dt>Dados</dt><dd>Use amostras <strong>sintéticas</strong>: contratos fictícios, notas fiscais de exemplo, laudos gerados, fotos sem pessoas. Inclua de propósito um PDF escaneado ruim, um DOCX, um PPTX e uma imagem.</dd>
+      </dl>
+      <ol class="steps">
+        <li><span class="where">Databricks · SQL Editor</span><br>Crie o volume de pouso e conceda acesso.
+          <span class="expect">o volume aparece em Catalog Explorer › {{CATALOG}} › raw › landing.</span></li>
+        <li><span class="where">Catalog Explorer · volume landing · Upload to this volume</span><br>Suba 10 a 20 arquivos sintéticos (PDF, JPG/PNG, DOCX, PPTX).
+          <span class="expect">os arquivos aparecem listados com tamanho e data.</span></li>
+        <li><span class="where">Databricks · SQL Editor</span><br>Liste os arquivos e crie a bronze de inventário.
+          <span class="expect">uma linha por arquivo, com extensão, tamanho e hash SHA-256.</span></li>
+      </ol>
+      <div class="code" data-lang="sql"><div class="code-head"><span class="where">Databricks · SQL Editor</span><button class="copy">Copiar</button></div><pre><code><span class="c-com">-- 1) Volume managed de pouso (o Unity Catalog decide o caminho físico)</span>
+CREATE VOLUME IF NOT EXISTS {{CATALOG}}.raw.landing
+  COMMENT 'Pouso de documentos sintéticos do lab';
+
+<span class="c-com">-- 2) Engenharia lê e escreve arquivos; leitura NÃO acessa o bruto</span>
+GRANT READ VOLUME, WRITE VOLUME ON VOLUME {{CATALOG}}.raw.landing TO `{{GRP_ENG}}`;
+
+<span class="c-com">-- 3) Lista o conteúdo do volume</span>
+LIST '/Volumes/{{CATALOG}}/raw/landing/';
+
+<span class="c-com">-- 4) Bronze: inventário SEM guardar o binário (evita duplicar storage)</span>
+CREATE OR REPLACE TABLE {{CATALOG}}.bronze.inventario_arquivos AS
+SELECT
+  path                                                  AS caminho,
+  lower(regexp_extract(path, '\\.([A-Za-z0-9]+)$', 1)) AS extensao,
+  length                                                AS tamanho_bytes,
+  modificationTime                                      AS modificado_em,
+  sha2(content, 256)                                    AS hash_sha256,
+  length &gt; 100 * 1024 * 1024                            AS acima_limite_parse,
+  current_timestamp()                                   AS inventariado_em
+FROM read_files('/Volumes/{{CATALOG}}/raw/landing/', format =&gt; 'binaryFile');
+
+<span class="c-com">-- 5) Visão rápida do acervo</span>
+SELECT extensao, count(*) AS qtd, round(sum(tamanho_bytes)/1024/1024, 2) AS mb
+FROM {{CATALOG}}.bronze.inventario_arquivos
+GROUP BY ALL ORDER BY qtd DESC;
+
+<span class="c-com">-- 6) Duplicados pelo hash (mesmo documento com nomes diferentes)</span>
+SELECT hash_sha256, collect_list(caminho) AS caminhos, count(*) AS copias
+FROM {{CATALOG}}.bronze.inventario_arquivos
+GROUP BY hash_sha256 HAVING count(*) &gt; 1;</code></pre></div>
+
+      <div class="callout"><strong><span class="tag fato">FATO</span> Volume managed vs external</strong>
+        <p>Managed: armazenado no storage gerenciado do schema, todo acesso passa pelo Unity Catalog e o apagamento tem retenção de 7 dias. External: registrado sobre um caminho existente; ao apagar o volume, os dados ficam no storage, e ferramentas externas podem usar URIs diretos.</p>
+        <p>Para ler arquivos é preciso <code>USE CATALOG</code> + <code>USE SCHEMA</code> + <code>READ VOLUME</code>; para gravar, também <code>WRITE VOLUME</code>.</p></div>
+
+      <details class="quiz"><summary>Perguntas de checagem</summary><ol>
+        <li>Onde o arquivo de um volume managed fica fisicamente?<div class="ans">No storage do seu Azure (managed location do schema/catálogo/metastore), num caminho escolhido pelo Unity Catalog.</div></li>
+        <li>Por que a bronze guarda o hash e não o binário?<div class="ans">Detecta duplicados e alterações sem duplicar storage; o binário já está no volume.</div></li>
+        <li>O grupo de leitura deveria ter <code>READ VOLUME</code> em <code>raw.landing</code>?<div class="ans">Não. O bruto pode ter PII; o consumo deve vir da gold.</div></li>
+      </ol></details>
+      <label class="check-row"><input type="checkbox" data-done="m2"> Aprendi quando: sei a diferença entre volume managed e external e onde o arquivo fica de fato.</label>
+    </div>
+  </details>
+
+  <!-- ---------------- M3 -->
+  <details class="module" id="m3" data-mod="m3">
+    <summary><span class="mnum">M3</span><span class="mtitle">Extração com IA</span><span class="mmeta"><span class="tag dbx">Databricks</span><span class="tag cost">CUSTO</span></span></summary>
+    <div class="mbody">
+      <dl class="kv">
+        <dt>Objetivo</dt><dd>Transformar documentos em dados: <code>ai_parse_document</code> na silver, <code>ai_extract</code> na gold, validação visual.</dd>
+        <dt>Analogia</dt><dd><code>ai_parse_document</code> é o digitalizador que entende o layout (títulos, tabelas, figuras). <code>ai_extract</code> é o analista que lê e preenche um formulário que você definiu.</dd>
+        <dt>Requisitos</dt><dd>Databricks Runtime 17.3+ ou serverless (ambiente 3+). Região com suporte (East US 2 tem). Custo registrado no produto <code>AI_FUNCTIONS</code>.</dd>
+      </dl>
+      <div class="callout"><strong><span class="tag fato">FATO</span> Limites do ai_parse_document</strong>
+        <p>Formatos: PDF, JPG/JPEG, PNG, TIFF, DOC/DOCX, PPT/PPTX. Máximo de 500 páginas (use <code>pageRange</code> acima disso) e 100 MB por arquivo. Documentos com assinatura digital podem não ser processados com precisão. Imagens com alfabetos não latinos podem ter desempenho pior. A REST API limita a 100 páginas por documento.</p></div>
+
+      <ol class="steps">
+        <li><span class="where">Databricks · SQL Editor</span><br>Rode a silver em <strong>poucos arquivos primeiro</strong> (custo por documento).
+          <span class="expect">uma linha por arquivo com o VARIANT <code>parsed</code>; arquivos com problema têm <code>error_status</code> preenchido.</span></li>
+        <li><span class="where">Databricks · Agents / Document Parsing</span><br>Abra a UI de Document Parsing e compare o documento original com o resultado.
+          <span class="expect">regiões do documento destacadas com o conteúdo extraído; tabelas em HTML.</span></li>
+        <li><span class="where">Databricks · SQL Editor</span><br>Crie a gold com <code>ai_extract</code> (versão 2.1, com confiança por campo).
+          <span class="expect">campos tipados; <code>null</code> quando não encontrado; score de confiança entre 0 e 1.</span></li>
+        <li><span class="where">Databricks · SQL Editor</span><br>Separe os documentos que falharam ou têm baixa confiança para revisão humana.
+          <span class="expect">uma fila de exceções. É ela que mostra ao cliente a qualidade real.</span></li>
+      </ol>
+      <div class="code" data-lang="sql"><div class="code-head"><span class="where">Databricks · SQL Editor · Silver</span><button class="copy">Copiar</button></div><pre><code><span class="c-com">-- Silver: parse do documento. Comece com LIMIT para controlar custo.
+-- descriptionElementTypes = '' desliga a descrição de figuras (mais barato).</span>
+CREATE OR REPLACE TABLE {{CATALOG}}.silver.documentos_parseados AS
+SELECT
+  path AS caminho,
+  ai_parse_document(
+    content,
+    map('version', '2.0', 'descriptionElementTypes', '')
+  ) AS parsed,
+  current_timestamp() AS processado_em
+FROM read_files('/Volumes/{{CATALOG}}/raw/landing/', format =&gt; 'binaryFile')
+WHERE length &lt;= 100 * 1024 * 1024   <span class="c-com">-- respeita o limite de 100 MB</span>
+LIMIT 5;                             <span class="c-com">-- remova depois de validar</span>
+
+<span class="c-com">-- Texto corrido por documento + status de erro</span>
+CREATE OR REPLACE TABLE {{CATALOG}}.silver.documentos_texto AS
+SELECT
+  caminho,
+  concat_ws('\n\n',
+    transform(
+      try_cast(parsed:document:elements AS ARRAY&lt;VARIANT&gt;),
+      e -&gt; try_cast(e:content AS STRING)
+    )
+  ) AS texto,
+  parsed:error_status AS erro
+FROM {{CATALOG}}.silver.documentos_parseados;</code></pre></div>
+
+      <div class="code" data-lang="sql"><div class="code-head"><span class="where">Databricks · SQL Editor · Gold</span><button class="copy">Copiar</button></div><pre><code><span class="c-com">-- Gold: campos de negócio com ai_extract 2.1 (aceita o VARIANT do parse)</span>
+CREATE OR REPLACE TABLE {{CATALOG}}.gold.documentos_campos AS
+WITH extraido AS (
+  SELECT
+    caminho,
+    ai_extract(
+      parsed,
+      '{
+        "tipo_documento":  {"type": "enum", "labels": ["contrato", "nota_fiscal", "laudo", "outro"]},
+        "numero_documento":{"type": "string", "description": "Número ou identificador do documento"},
+        "data_documento":  {"type": "string", "description": "Data de emissão no formato AAAA-MM-DD"},
+        "valor_total":     {"type": "number", "description": "Valor total em reais"},
+        "contraparte":     {"type": "string", "description": "Nome da empresa ou pessoa contratante"}
+      }',
+      map('version', '2.1', 'enableConfidenceScores', 'true')
+    ) AS r
+  FROM {{CATALOG}}.silver.documentos_parseados
+)
+SELECT
+  caminho,
+  r:response:tipo_documento:value::STRING            AS tipo_documento,
+  r:response:numero_documento:value::STRING          AS numero_documento,
+  try_cast(r:response:data_documento:value::STRING AS DATE) AS data_documento,
+  r:response:valor_total:value::DECIMAL(18,2)        AS valor_total,
+  r:response:contraparte:value::STRING               AS contraparte,
+  r:response:valor_total:confidence_score::DOUBLE    AS conf_valor,
+  r:error_message::STRING                            AS erro_extracao
+FROM extraido;
+
+<span class="c-com">-- Fila de exceções para revisão humana</span>
+CREATE OR REPLACE VIEW {{CATALOG}}.gold.v_fila_revisao AS
+SELECT * FROM {{CATALOG}}.gold.documentos_campos
+WHERE erro_extracao IS NOT NULL OR conf_valor &lt; 0.7 OR tipo_documento IS NULL;</code></pre></div>
+
+      <div class="callout cost"><strong>Custo</strong><p>Cada documento processado consome AI Functions. Para estimar, rode em 5 arquivos, consulte <code>system.billing.usage</code> (M10) e extrapole pelo volume do cliente. Reprocessar tudo a cada execução é o erro mais caro: o M4 resolve isso.</p></div>
+      <details class="quiz"><summary>Perguntas de checagem</summary><ol>
+        <li>Um PDF de 800 páginas falha. Duas saídas?<div class="ans">Usar <code>pageRange</code> em blocos de até 500 páginas, ou dividir o arquivo antes do parse.</div></li>
+        <li>Por que manter a fila de revisão?<div class="ans">LLMs erram; a fila mede a qualidade e cria o processo humano para exceções.</div></li>
+        <li>Qual opção reduz custo quando o documento tem muitas figuras?<div class="ans"><code>descriptionElementTypes = ''</code>.</div></li>
+        <li>Onde o dado é processado durante o parse?<div class="ans">Dentro do perímetro de segurança da Databricks; os parâmetros não são armazenados.</div></li>
+      </ol></details>
+      <label class="check-row"><input type="checkbox" data-done="m3"> Aprendi quando: entendo limites, custo e qualidade, e sei tratar documentos que falham.</label>
+    </div>
+  </details>
+
+  <!-- ---------------- M4 -->
+  <details class="module" id="m4" data-mod="m4">
+    <summary><span class="mnum">M4</span><span class="mtitle">Pipeline medalhão automatizado</span><span class="mmeta"><span class="tag dbx">Databricks</span><span class="tag cost">CUSTO</span></span></summary>
+    <div class="mbody">
+      <dl class="kv">
+        <dt>Objetivo</dt><dd>Processar só arquivos novos ou alterados, sem intervenção.</dd>
+        <dt>Analogia</dt><dd>Uma esteira com sensor: só liga quando chega caixa nova, e lembra quais caixas já passaram (checkpoint).</dd>
+        <dt>Opções</dt><dd>(a) Pipeline Lakeflow com streaming tables; (b) Job com gatilho de chegada de arquivo; (c) tarefa <code>ai_parse_document</code> em Jobs <span class="tag beta">BETA</span>.</dd>
+      </dl>
+      <ol class="steps">
+        <li><span class="where">Databricks · Jobs &amp; Pipelines · Create · ETL pipeline</span><br>Crie um pipeline com o código abaixo, catálogo <span class="v" data-k="CATALOG"></span>, schema destino <code>silver</code>.
+          <span class="expect">duas streaming tables; a segunda só processa linhas novas da primeira.</span></li>
+        <li><span class="where">Pipeline · Schedule / Job · Add trigger · File arrival</span><br>Aponte o gatilho para <code>/Volumes/{{CATALOG}}/raw/landing/</code>.
+          <span class="expect">o gatilho verifica novos arquivos cerca de uma vez por minuto e não cobra além do custo de listagem do storage.</span></li>
+        <li><span class="where">Catalog Explorer · volume landing</span><br>Suba um arquivo novo e acompanhe a execução.
+          <span class="expect">o arquivo chega à silver (e à gold, se encadeada) sem reprocessar os anteriores.</span></li>
+      </ol>
+      <div class="code" data-lang="sql"><div class="code-head"><span class="where">Lakeflow Declarative Pipeline · SQL</span><button class="copy">Copiar</button></div><pre><code><span class="c-com">-- Bronze incremental: só arquivos novos (checkpoint automático)</span>
+CREATE OR REFRESH STREAMING TABLE bronze_documentos AS
+SELECT path, modificationTime, length, content, current_timestamp() AS ingerido_em
+FROM STREAM(read_files('/Volumes/{{CATALOG}}/raw/landing/', format =&gt; 'binaryFile'));
+
+<span class="c-com">-- Silver incremental: parse só do que entrou agora</span>
+CREATE OR REFRESH STREAMING TABLE silver_documentos
+TBLPROPERTIES ('pipelines.externalMetadata.enabled' = 'true')  <span class="c-com">-- visível ao mirroring do Fabric</span>
+AS SELECT
+  path AS caminho,
+  ai_parse_document(content, map('version', '2.0', 'descriptionElementTypes', '')) AS parsed,
+  current_timestamp() AS processado_em
+FROM STREAM(bronze_documentos)
+WHERE length &lt;= 100 * 1024 * 1024;</code></pre></div>
+      <div class="callout warn"><strong><span class="tag fato">FATO</span> Pipelines e o Fabric</strong><p>Materialized views e streaming tables só aparecem no mirroring do Fabric com external data access habilitado para pipelines (propriedade <code>pipelines.externalMetadata.enabled</code>). Sem isso, a gold de um pipeline "some" no Fabric.</p></div>
+      <div class="callout"><strong><span class="tag inf">INFERÊNCIA</span> Bronze com binário</strong><p>A bronze incremental guarda o <code>content</code> para alimentar a silver. Em volumes grandes, isso duplica storage. Alternativa: ler o binário direto do volume na silver ou usar o tipo FILE <span class="tag beta">BETA</span>.</p></div>
+      <details class="quiz"><summary>Perguntas de checagem</summary><ol>
+        <li>Como o pipeline sabe que um arquivo já foi processado?<div class="ans">Pelo checkpoint da streaming table (Auto Loader/read_files em modo stream).</div></li>
+        <li>Gatilho de chegada de arquivo ou agendamento fixo?<div class="ans">Chegada de arquivo quando a chegada é irregular; agendamento quando há janela conhecida.</div></li>
+        <li>O que acontece se um arquivo existente for sobrescrito?<div class="ans">Depende da configuração; por padrão o Auto Loader não reprocessa arquivos já vistos. Para versionar, use nomes únicos ou trate alterações explicitamente.</div></li>
+      </ol></details>
+      <label class="check-row"><input type="checkbox" data-done="m4"> Aprendi quando: um arquivo novo no volume chega sozinho até a gold.</label>
+    </div>
+  </details>
+
+  <!-- ---------------- M5 -->
+  <details class="module" id="m5" data-mod="m5">
+    <summary><span class="mnum">M5</span><span class="mtitle">Busca e RAG (opcional)</span><span class="mmeta"><span class="tag dbx">Databricks</span><span class="tag beta">BETA</span><span class="tag cost">CUSTO</span></span></summary>
+    <div class="mbody">
+      <dl class="kv">
+        <dt>Objetivo</dt><dd>Preparar o conteúdo para busca semântica e respostas que citam a fonte.</dd>
+        <dt>Analogia</dt><dd>Recortar o documento em fichas (chunks) com etiqueta de origem (título, seção, página) para o bibliotecário achar o trecho certo.</dd>
+        <dt>Requisitos</dt><dd><code>ai_prep_search</code> <span class="tag beta">BETA</span>: Runtime 18.2+ ou serverless ambiente 3+. Databricks AI Search (antigo Vector Search) disponível em East US 2.</dd>
+      </dl>
+      <ol class="steps">
+        <li><span class="where">Databricks · SQL Editor</span><br>Gere a tabela de chunks a partir da silver.
+          <span class="expect">várias linhas por documento, com <code>chunk_to_embed</code> enriquecido com contexto.</span></li>
+        <li><span class="where">Databricks · Compute · AI Search · Create endpoint</span><br>Crie um endpoint (Standard) e um índice Delta Sync sobre a tabela, com <code>chunk_id</code> como chave e <code>chunk_to_embed</code> como coluna de embedding.
+          <span class="expect">o índice sincroniza; status Online. <span class="tag cost">CUSTO</span> endpoint cobra enquanto existir.</span></li>
+        <li><span class="where">Databricks · SQL Editor ou Knowledge Assistant</span><br>Faça uma pergunta e confira se a resposta cita o documento de origem.
+          <span class="expect">trechos ranqueados com <code>source_uri</code>.</span></li>
+      </ol>
+      <div class="code" data-lang="sql"><div class="code-head"><span class="where">Databricks · SQL Editor</span><button class="copy">Copiar</button></div><pre><code><span class="c-com">-- Chunks prontos para índice de busca (a partir da silver já parseada)</span>
+CREATE OR REPLACE TABLE {{CATALOG}}.gold.chunks_busca
+TBLPROPERTIES (delta.enableChangeDataFeed = true)   <span class="c-com">-- exigido para Delta Sync</span>
+AS
+WITH prepped AS (
+  SELECT caminho, ai_prep_search(parsed) AS result
+  FROM {{CATALOG}}.silver.documentos_parseados
+)
+SELECT
+  chunk.value:chunk_id::STRING          AS chunk_id,
+  chunk.value:chunk_position::INT       AS chunk_position,
+  chunk.value:chunk_to_retrieve::STRING AS chunk_to_retrieve,
+  chunk.value:chunk_to_embed::STRING    AS chunk_to_embed,
+  chunk.value:metadata                  AS metadata,
+  prepped.caminho                       AS source_uri
+FROM prepped,
+LATERAL variant_explode(prepped.result:document.contents) AS chunk;</code></pre></div>
+      <div class="callout warn"><strong><span class="tag prem">PREMISSA</span> Permissão na busca</strong><p>O índice herda a tabela de origem, mas um agente que responde com uma identidade de serviço pode expor trechos a quem não teria acesso ao documento. Teste com usuários do grupo leitura e, em cliente, filtre por metadados de sensibilidade.</p></div>
+      <label class="check-row"><input type="checkbox" data-done="m5"> Aprendi quando: pergunto algo e recebo resposta citando o documento de origem.</label>
+    </div>
+  </details>
+
+  <!-- ---------------- M6 -->
+  <details class="module" id="m6" data-mod="m6">
+    <summary><span class="mnum">M6</span><span class="mtitle">Fabric: mirroring e consumo</span><span class="mmeta"><span class="tag dbx">Databricks</span><span class="tag fab">Fabric</span><span class="tag cost">CUSTO</span></span></summary>
+    <div class="mbody">
+      <dl class="kv">
+        <dt>Objetivo</dt><dd>Levar a gold ao Fabric sem cópia e consumir no SQL endpoint e no Power BI.</dd>
+        <dt>Analogia</dt><dd>Uma vitrine com espelho: o produto continua no estoque (Databricks); a vitrine (Fabric) mostra o reflexo e não pode mexer nele.</dd>
+        <dt>Dois caminhos</dt><dd><strong>Mirrored Azure Databricks catalog</strong> criado no Fabric <span class="tag ga">GA</span>; <strong>Publish to OneLake</strong> a partir do Databricks <span class="tag preview">PREVIEW</span> (Runtime 18.1+ ou serverless).</dd>
+      </dl>
+      <ol class="steps">
+        <li><span class="where">Databricks · Catalog · ⚙ · Metastore · Details</span><br>Ligue <strong>External data access</strong> (exige metastore admin).
+          <span class="expect">opção habilitada. Ela vem desligada por padrão para evitar acesso externo não autorizado.</span></li>
+        <li><span class="where">Databricks · Settings · Identity and access</span><br>Adicione o service principal <span class="v" data-k="SP_FABRIC"></span> (Entra ID managed) ao workspace e rode os grants abaixo.
+          <span class="expect">o SP enxerga só a gold.</span></li>
+        <li><span class="where">Fabric · workspace {{FABRIC_WS}} · New item · Mirrored Azure Databricks catalog</span><br>Crie a conexão com o <strong>service principal</strong>, escolha o catálogo e só o schema <code>gold</code>.
+          <span class="expect">o item mostra as tabelas da gold; "Automatically sync future catalog changes" vem ligado.</span></li>
+        <li><span class="where">Fabric · item espelhado · SQL analytics endpoint</span><br>Rode um <code>SELECT</code> na tabela <code>documentos_campos</code>.
+          <span class="expect">dados atuais do Databricks, sem pipeline de cópia.</span></li>
+        <li><span class="where">Fabric · Lakehouse · New shortcut / Power BI</span><br>Opcional: crie um lakehouse com shortcut para o item espelhado e um relatório simples (Direct Lake).
+          <span class="expect">relatório lendo a gold. Tente um <code>UPDATE</code>: falha, é somente leitura.</span></li>
+      </ol>
+      <div class="code" data-lang="sql"><div class="code-head"><span class="where">Databricks · SQL Editor</span><button class="copy">Copiar</button></div><pre><code><span class="c-com">-- Menor privilégio para a identidade da conexão do Fabric.
+-- Use o applicationId do service principal se o nome não resolver.</span>
+GRANT USE CATALOG ON CATALOG {{CATALOG}}            TO `{{SP_FABRIC}}`;
+GRANT USE SCHEMA, SELECT ON SCHEMA {{CATALOG}}.gold TO `{{SP_FABRIC}}`;
+<span class="c-com">-- Privilégio explícito para leitura externa (não vem em ALL PRIVILEGES)</span>
+GRANT EXTERNAL USE SCHEMA ON SCHEMA {{CATALOG}}.gold TO `{{SP_FABRIC}}`;
+
+<span class="c-com">-- Conferência</span>
+SHOW GRANTS `{{SP_FABRIC}}` ON SCHEMA {{CATALOG}}.gold;</code></pre></div>
+      <div class="code" data-lang="sql"><div class="code-head"><span class="where">Fabric · SQL analytics endpoint</span><button class="copy">Copiar</button></div><pre><code><span class="c-com">-- Consulta de consumo (T-SQL no endpoint do item espelhado)</span>
+SELECT tipo_documento, COUNT(*) AS qtd, SUM(valor_total) AS total
+FROM gold.documentos_campos
+GROUP BY tipo_documento
+ORDER BY qtd DESC;</code></pre></div>
+      <div class="callout bad"><strong><span class="tag fato">FATO</span> Credencial da conexão</strong><p>A credencial usada para criar a conexão do mirroring é usada em todas as consultas. Conexão criada com a conta de um admin expõe tudo o que o admin vê. Use service principal com grants mínimos.</p></div>
+      <div class="callout"><strong><span class="tag fato">FATO</span> Rede</strong><p>A página do tutorial ainda diz que o workspace não pode estar atrás de private endpoint, mas a documentação e o anúncio GA mais recentes mostram suporte via <strong>VNet data gateway</strong> (exige VNet injection e private link no front-end; on-premises gateway não é suportado). Detalhes no M9.</p></div>
+      <details class="quiz"><summary>Perguntas de checagem</summary><ol>
+        <li>Por que não há cópia?<div class="ans">O item espelhado guarda metadados e lê os arquivos Delta via shortcut no storage onde já estão.</div></li>
+        <li>Por que é somente leitura?<div class="ans">A escrita é responsabilidade do Databricks (fonte da verdade); o Fabric só lê.</div></li>
+        <li>O grupo leitura tem <code>SELECT</code> na gold no Databricks. Ele já vê a tabela no Fabric?<div class="ans">Não automaticamente. As permissões do Unity Catalog não atravessam; precisa de workspace role ou OneLake security no Fabric.</div></li>
+        <li>Quais três pré-requisitos do lado Databricks?<div class="ans">Unity Catalog, external data access no metastore, <code>EXTERNAL USE SCHEMA</code> (+ <code>SELECT</code>) para a identidade da conexão. Tabelas em Delta.</div></li>
+      </ol></details>
+      <label class="check-row"><input type="checkbox" data-done="m6"> Aprendi quando: explico por que não há cópia e por que é somente leitura.</label>
+    </div>
+  </details>
+
+  <!-- ---------------- M7 -->
+  <details class="module" id="m7" data-mod="m7">
+    <summary><span class="mnum">M7</span><span class="mtitle">Proteção de dados nos dois lados</span><span class="mmeta"><span class="tag dbx">Databricks</span><span class="tag fab">Fabric</span><span class="tag pur">Purview</span></span></summary>
+    <div class="mbody">
+      <dl class="kv">
+        <dt>Objetivo</dt><dd>Proteger o dado no Databricks (grants, filtros, máscaras) e no Fabric (OneLake security, rótulos, DLP, Audit) e saber qual lacuna sobra.</dd>
+        <dt>Analogia</dt><dd>Duas portarias de prédios diferentes com o mesmo crachá (grupo do Entra ID). Cada portaria precisa ser configurada; o crachá não basta.</dd>
+        <dt>Licença</dt><dd>DLP para Fabric: o admin que configura precisa de M365 E5, E5 Compliance, E5 Information Protection &amp; Governance ou Purview capacities. Rótulos: M365 E3/E5. A avaliação de DLP consome capacidade.</dd>
+      </dl>
+      <h4>Lado Databricks</h4>
+      <div class="code" data-lang="sql"><div class="code-head"><span class="where">Databricks · SQL Editor</span><button class="copy">Copiar</button></div><pre><code><span class="c-com">-- Máscara de coluna: só engenharia vê o texto integral</span>
+CREATE OR REPLACE FUNCTION {{CATALOG}}.gold.fn_mask_texto(v STRING)
+RETURN CASE WHEN is_account_group_member('{{GRP_ENG}}') THEN v ELSE '*** restrito ***' END;
+
+ALTER TABLE {{CATALOG}}.silver.documentos_texto
+  ALTER COLUMN texto SET MASK {{CATALOG}}.gold.fn_mask_texto;
+
+<span class="c-com">-- Filtro de linha: leitura só vê documentos que não são "laudo"</span>
+CREATE OR REPLACE FUNCTION {{CATALOG}}.gold.fn_filtro_tipo(tipo STRING)
+RETURN is_account_group_member('{{GRP_ENG}}') OR tipo &lt;&gt; 'laudo';
+
+ALTER TABLE {{CATALOG}}.gold.documentos_campos
+  SET ROW FILTER {{CATALOG}}.gold.fn_filtro_tipo ON (tipo_documento);
+
+<span class="c-com">-- Gold de consumo SEM PII, pensada para ir ao Fabric</span>
+CREATE OR REPLACE TABLE {{CATALOG}}.gold.documentos_consumo AS
+SELECT
+  sha2(caminho, 256)            AS documento_id,   <span class="c-com">-- pseudônimo, sem caminho real</span>
+  tipo_documento,
+  date_trunc('MONTH', data_documento) AS mes_documento,
+  valor_total
+FROM {{CATALOG}}.gold.documentos_campos;</code></pre></div>
+      <div class="callout warn"><strong><span class="tag prem">PREMISSA</span> Filtros, máscaras e mirroring</strong><p>Não há garantia documentada de que row filters e column masks do Unity Catalog sejam aplicados no Fabric. Teste: espelhe uma tabela com filtro e consulte com um usuário do grupo leitura. Até confirmar, o desenho seguro é publicar no Fabric só a <code>documentos_consumo</code>, já sem PII.</p></div>
+
+      <h4>Lado Fabric e Purview</h4>
+      <ol class="steps">
+        <li><span class="where">Fabric · item espelhado · Manage OneLake security</span><br>Crie uma role de leitura com o grupo <span class="v" data-k="GRP_READ"></span> e só a tabela de consumo.
+          <span class="expect">o item Azure Databricks mirrored catalog aceita permissão Read. Lembre: OneLake security atua sobre quem tem acesso de Viewer; Admin/Member/Contributor têm acesso elevado.</span></li>
+        <li><span class="where">Fabric · item · Sensitivity label</span><br>Aplique um rótulo (por exemplo, Confidencial) ao item espelhado e ao relatório.
+          <span class="expect">o rótulo acompanha exportações suportadas (Excel, PDF).</span></li>
+        <li><span class="where">Portal Purview · Data loss prevention · Policies · Create · Fabric and Power BI</span><br>Crie uma política em modo de teste que detecte CPF (tipo de informação sensível) nos itens do workspace <span class="v" data-k="FABRIC_WS"></span>, com dica de política e alerta.
+          <span class="expect">ao atualizar dados, o item ganha um ícone de violação; o alerta aparece em DLP › Alerts. A ação "restrict access" está em preview.</span></li>
+        <li><span class="where">Portal Purview · Audit</span><br>Pesquise atividades do Fabric do dia (abertura do item, consulta, compartilhamento).
+          <span class="expect">eventos do Fabric no log de auditoria. Pode levar algum tempo para aparecer.</span></li>
+      </ol>
+      <div class="callout bad"><strong>Lacuna que você deve declarar</strong><p>Nenhum DLP do Purview inspeciona o conteúdo dos arquivos no Volume do Databricks. Ali a proteção é o grant. Em cliente, isso vai para a matriz de riscos com dono e mitigação.</p></div>
+      <details class="quiz"><summary>Perguntas de checagem</summary><ol>
+        <li>Um usuário Contributor no workspace Fabric vê dados fora da role de OneLake security. Por quê?<div class="ans">Admin, Member e Contributor têm acesso elevado pela permissão Write; OneLake security mira usuários com acesso de leitura.</div></li>
+        <li>Onde o DLP do Fabric atua e onde não atua?<div class="ans">Atua em itens estruturados (lakehouse, warehouse, mirrored, modelos semânticos…). Não atua sobre arquivos no Volume do Databricks.</div></li>
+        <li>Por que publicar uma gold sem PII em vez de confiar só em máscaras?<div class="ans">Porque máscaras do Unity Catalog não têm aplicação garantida no Fabric e o caminho de storage direto contorna RLS/CLM.</div></li>
+      </ol></details>
+      <label class="check-row"><input type="checkbox" data-done="m7"> Aprendi quando: mostro onde cada controle atua e qual lacuna sobra.</label>
+    </div>
+  </details>
+
+  <!-- ---------------- M8 -->
+  <details class="module" id="m8" data-mod="m8">
+    <summary><span class="mnum">M8</span><span class="mtitle">Governança e linhagem</span><span class="mmeta"><span class="tag dbx">Databricks</span><span class="tag fab">Fabric</span><span class="tag pur">Purview</span></span></summary>
+    <div class="mbody">
+      <dl class="kv">
+        <dt>Objetivo</dt><dd>Catálogo, linhagem e qualidade, e recomendar onde a governança deve morar.</dd>
+        <dt>Analogia</dt><dd>Linhagem é a árvore genealógica do dado: de qual arquivo nasceu cada número do relatório.</dd>
+      </dl>
+      <ol class="steps">
+        <li><span class="where">Catalog Explorer · tabela gold · Lineage</span><br>Veja o grafo do volume até a gold.
+          <span class="expect">tabelas e notebooks/queries que geraram cada uma.</span></li>
+        <li><span class="where">Databricks · SQL Editor</span><br>Consulte as system tables de linhagem.
+          <span class="expect">eventos de leitura e escrita entre tabelas do lab.</span></li>
+        <li><span class="where">Fabric · OneLake catalog · Explore / Govern / Secure</span><br>Encontre o item espelhado, veja recomendações em Govern e as roles em Secure.
+          <span class="expect">visão unificada de itens, saúde de governança e permissões.</span></li>
+        <li><span class="where">Purview (só se já existir conta) · Data Map · Sources</span><br>Registre o Azure Databricks com extração Unity Catalog via SQL Warehouse.
+          <span class="expect">metastore, catálogos, schemas, tabelas, views, tags e linhagem. Não crie conta nova: não é mais possível.</span></li>
+      </ol>
+      <div class="code" data-lang="sql"><div class="code-head"><span class="where">Databricks · SQL Editor</span><button class="copy">Copiar</button></div><pre><code><span class="c-com">-- Linhagem entre tabelas do lab (últimos eventos)</span>
+SELECT event_time, entity_type, source_table_full_name, target_table_full_name
+FROM system.access.table_lineage
+WHERE target_table_catalog = '{{CATALOG}}' OR source_table_catalog = '{{CATALOG}}'
+ORDER BY event_time DESC
+LIMIT 100;
+
+<span class="c-com">-- Tags de governança para classificar tabelas</span>
+ALTER TABLE {{CATALOG}}.silver.documentos_texto SET TAGS ('sensibilidade' = 'alta', 'contem_pii' = 'sim');
+ALTER TABLE {{CATALOG}}.gold.documentos_consumo  SET TAGS ('sensibilidade' = 'baixa', 'contem_pii' = 'nao');</code></pre></div>
+      <div class="callout"><strong><span class="tag inf">INFERÊNCIA</span> Recomendação de governança</strong><p>Cliente novo: governança técnica no Unity Catalog (lado Databricks) e no OneLake catalog (lado Fabric), com Purview na parte de segurança. Cliente com conta Purview Data Map: manter até a transição (manutenção até 12/11/2027) e não expandir escopo.</p></div>
+      <label class="check-row"><input type="checkbox" data-done="m8"> Aprendi quando: recomendo ao cliente onde a governança deve morar, considerando a aposentadoria.</label>
+    </div>
+  </details>
+
+  <!-- ---------------- M9 -->
+  <details class="module" id="m9" data-mod="m9">
+    <summary><span class="mnum">M9</span><span class="mtitle">Rede e identidade</span><span class="mmeta"><span class="tag az">Azure</span><span class="tag dbx">Databricks</span><span class="tag fab">Fabric</span></span></summary>
+    <div class="mbody">
+      <dl class="kv">
+        <dt>Objetivo</dt><dd>Entender SCC, VNet injection, private endpoints e o impacto em mirroring e scans.</dd>
+        <dt>Analogia</dt><dd>Fechar a rede é trocar a porta da rua por um túnel privado. Cada serviço que precisa entrar (Fabric, Purview) precisa do seu próprio acesso ao túnel.</dd>
+      </dl>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Integração</th><th>Rede aberta</th><th>Rede fechada (private endpoint / sem acesso público)</th></tr></thead>
+        <tbody>
+          <tr><td>Fabric mirroring do catálogo</td><td>Direto</td><td>VNet data gateway; conexão criada em <em>Manage connections</em>; workspace com VNet injection e private link no front-end. On-premises gateway não é suportado.</td></tr>
+          <tr><td>ADLS atrás de firewall</td><td>—</td><td>Trusted workspace access; a Workspace Identity do Fabric precisa estar liberada no firewall. Esse caminho não aplica RLS/CLM do Unity Catalog.</td></tr>
+          <tr><td>Purview scan do Unity Catalog</td><td>Azure IR</td><td>Managed VNet IR ou SHIR em Kubernetes; managed private endpoint para o Databricks.</td></tr>
+          <tr><td>AI Functions / serverless</td><td>Direto</td><td>Avaliar serverless private connectivity (disponível em East US 2).</td></tr>
+        </tbody>
+      </table></div>
+      <ol class="steps">
+        <li><span class="where">Portal Azure · Workspace · Networking</span><br>Registre: SCC (No Public IP), VNet injection, acesso público front-end, private endpoints.
+          <span class="expect">o desenho atual do lab, para comparar com o de produção.</span></li>
+        <li><span class="where">Desenho (papel ou Whiteboard)</span><br>Simule o desenho de produção: workspace com private link, gateway de VNet para o Fabric, storage com firewall, Purview com Managed VNet IR.
+          <span class="expect">uma lista de dependências de rede com dono no cliente.</span></li>
+        <li><span class="where">Entra ID</span><br>Defina identidades: service principal para mirroring, managed identity (Access Connector) para storage, grupos sincronizados por Automatic Identity Management.
+          <span class="expect">nenhum token pessoal em produção; segredos no Key Vault.</span></li>
+      </ol>
+      <label class="check-row"><input type="checkbox" data-done="m9"> Aprendi quando: sei quais integrações quebram com rede fechada e como contornar.</label>
+    </div>
+  </details>
+
+  <!-- ---------------- M10 -->
+  <details class="module" id="m10" data-mod="m10">
+    <summary><span class="mnum">M10</span><span class="mtitle">Custos e limpeza</span><span class="mmeta"><span class="tag az">Azure</span><span class="tag dbx">Databricks</span><span class="tag fab">Fabric</span></span></summary>
+    <div class="mbody">
+      <dl class="kv">
+        <dt>Objetivo</dt><dd>Não deixar nada ligado e saber estimar consumo.</dd>
+        <dt>Analogia</dt><dd>Apagar a luz ao sair de cada sala, e ler o relógio de luz no fim do mês.</dd>
+      </dl>
+      <div class="code" data-lang="sql"><div class="code-head"><span class="where">Databricks · SQL Editor</span><button class="copy">Copiar</button></div><pre><code><span class="c-com">-- Consumo dos últimos 30 dias por produto (inclui AI_FUNCTIONS)</span>
+SELECT usage_date, billing_origin_product, sku_name,
+       round(sum(usage_quantity), 2) AS quantidade, usage_unit
+FROM system.billing.usage
+WHERE usage_date &gt;= current_date() - INTERVAL 30 DAYS
+GROUP BY ALL
+ORDER BY usage_date DESC, quantidade DESC;
+
+<span class="c-com">-- Só o custo das AI Functions (parse/extract)</span>
+SELECT usage_date, round(sum(usage_quantity), 2) AS dbus
+FROM system.billing.usage
+WHERE billing_origin_product = 'AI_FUNCTIONS'
+  AND usage_date &gt;= current_date() - INTERVAL 30 DAYS
+GROUP BY ALL ORDER BY usage_date;</code></pre></div>
+      <h4>Checklist de desligamento</h4>
+      <ul class="tight">
+        <li>SQL Warehouses com auto-stop curto; clusters com auto-terminate e política de cluster.</li>
+        <li>Pipelines em modo <em>triggered</em>, não contínuo; gatilhos pausados quando não estiver estudando.</li>
+        <li>Endpoint de AI Search: apague quando terminar o M5 (cobra enquanto existe).</li>
+        <li>Capacidade Fabric F SKU: pause no portal Azure (Microsoft Fabric › capacidade › Pause). Ao pausar, overages acumulados são faturados, e o mirroring para; ao retomar, use <em>Resume replication</em>. Trial não pausa.</li>
+        <li>Políticas DLP em modo de teste e escopo só no workspace do lab.</li>
+        <li>Tags <code>owner</code> e <code>expira</code> atualizadas; orçamento (budget) no resource group.</li>
+      </ul>
+      <div class="code" data-lang="bash"><div class="code-head"><span class="where">Azure CLI · Cloud Shell</span><button class="copy">Copiar</button></div><pre><code><span class="c-com"># Pausa e retoma a capacidade Fabric (F SKU) pela API do Azure</span>
+CAP_ID=$(az resource list -g {{RG}} --resource-type Microsoft.Fabric/capacities --query "[0].id" -o tsv)
+az resource invoke-action --ids "$CAP_ID" --action suspend   <span class="c-com"># pausa (para a cobrança)</span>
+<span class="c-com"># az resource invoke-action --ids "$CAP_ID" --action resume  # retoma</span></code></pre></div>
+      <label class="check-row"><input type="checkbox" data-done="m10"> Aprendi quando: estimo o custo do lab e desligo tudo com segurança.</label>
+    </div>
+  </details>
+</section>
+
+<!-- ===================================================== EXPLORAÇÃO -->
+<section class="page" id="exploracao">
+  <h2>Exploração guiada</h2>
+  <p class="lead">Depois de montar, explore as telas com um objetivo e quebre o lab de propósito. É assim que você descobre o que vai acontecer no cliente.</p>
+  <h3>Tour pelas telas</h3>
+  <div class="grid c2">
+    <div class="card dbx"><h4>Databricks</h4><ul class="tight small">
+      <li><strong>Catalog Explorer</strong>: abas Overview, Permissions, Lineage, Details de cada objeto. Compare o que o grupo leitura vê.</li>
+      <li><strong>Document Parsing</strong>: documento ao lado do resultado. Procure tabelas mal lidas e figuras ignoradas.</li>
+      <li><strong>Information Extraction</strong>: itere o schema de campos visualmente antes de levar ao SQL.</li>
+      <li><strong>System tables</strong> (<code>system.access</code>, <code>system.billing</code>): quem acessou, quanto custou.</li>
+      <li><strong>Jobs &amp; Pipelines</strong>: histórico, eventos, gatilhos e falhas.</li>
+    </ul></div>
+    <div class="card fab"><h4>Fabric</h4><ul class="tight small">
+      <li><strong>OneLake catalog › Explore</strong>: encontre o item espelhado e veja metadados.</li>
+      <li><strong>OneLake catalog › Govern</strong>: saúde de governança e ações recomendadas.</li>
+      <li><strong>OneLake catalog › Secure</strong>: roles de workspace e de OneLake security num só lugar.</li>
+      <li><strong>Item espelhado › Manage catalog</strong>: o que está incluído/excluído no sync.</li>
+      <li><strong>Capacity Metrics app</strong>: consumo de CU do mirroring, consultas e DLP.</li>
+    </ul></div>
+    <div class="card pur"><h4>Purview</h4><ul class="tight small">
+      <li><strong>Information Protection › Labels</strong>: escopo do rótulo (Files &amp; other data assets) e criptografia.</li>
+      <li><strong>DLP › Policies / Alerts</strong>: política para Fabric e Power BI, alertas gerados.</li>
+      <li><strong>Activity explorer</strong>: eventos de DLP do Fabric (papéis de compliance/segurança).</li>
+      <li><strong>Audit</strong>: atividades do Fabric e Power BI.</li>
+      <li><strong>Insider Risk</strong>: indicadores prontos para Fabric (lakehouse, Power BI).</li>
+    </ul></div>
+    <div class="card az"><h4>Azure</h4><ul class="tight small">
+      <li><strong>Resource group gerenciado</strong> do Databricks: veja, não mexa.</li>
+      <li><strong>Access Connector</strong>: a managed identity usada pelo Unity Catalog no storage.</li>
+      <li><strong>Cost Management</strong>: filtre por tags do lab.</li>
+      <li><strong>Networking</strong> do workspace: SCC, VNet, private endpoints.</li>
+    </ul></div>
+  </div>
+
+  <h3>Experimentos "e se?"</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Experimento</th><th>Como fazer</th><th>O que observar / aprender</th></tr></thead>
+    <tbody>
+      <tr><td>Arquivo acima de 100 MB</td><td>Suba um PDF grande e rode a silver sem o filtro de tamanho</td><td>Mensagem de erro e onde ela aparece; por que a bronze marca <code>acima_limite_parse</code></td></tr>
+      <tr><td>PDF escaneado ruim</td><td>Foto torta de um documento impresso</td><td>Confiança dos elementos, campos <code>null</code> no extract, fila de revisão</td></tr>
+      <tr><td>Documento com assinatura digital</td><td>PDF assinado digitalmente</td><td>Limitação documentada de precisão</td></tr>
+      <tr><td>Revogar <code>EXTERNAL USE SCHEMA</code></td><td><code>REVOKE</code> do SP e atualizar o item no Fabric</td><td>Como a falha aparece no Fabric; quem seria acionado no cliente</td></tr>
+      <tr><td>Conexão com conta admin</td><td>Crie um segundo item espelhado com sua conta</td><td>Ele enxerga silver e raw? É o risco do "atalho ruim"</td></tr>
+      <tr><td>Filtro de linha + mirroring</td><td>Espelhe <code>documentos_campos</code> com row filter e consulte como usuário do grupo leitura</td><td>Valida (ou derruba) a premissa do M7</td></tr>
+      <tr><td>Capacidade pausada</td><td>Pause a F SKU e retome</td><td>Mirroring pausado; necessidade de <em>Resume replication</em></td></tr>
+      <tr><td>DLP com CPF sintético</td><td>Insira CPFs fictícios válidos na gold de teste</td><td>Tempo até a dica de política, alerta, Activity explorer</td></tr>
+      <tr><td>Reprocessamento</td><td>Rode a silver completa duas vezes e compare <code>system.billing.usage</code></td><td>Por que o pipeline incremental do M4 economiza</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ===================================================== RECURSOS -->
+<section class="page" id="recursos">
+  <h2>Recursos e status</h2>
+  <p class="lead">O que existe hoje, em que estágio e com qual limite. Status verificado em 18/11/2026; reconfira antes de levar ao cliente.</p>
+  <div class="filters" id="feat-filters">
+    <button data-f="all" class="on">Todos</button>
+    <button data-f="dbx">Databricks</button>
+    <button data-f="fab">Fabric</button>
+    <button data-f="pur">Purview</button>
+    <button data-f="ga">GA</button>
+    <button data-f="preview">Preview/Beta</button>
+    <button data-f="ret">Aposentadoria</button>
+  </div>
+  <div class="table-wrap"><table id="feat-table">
+    <thead><tr><th>Recurso</th><th>Plataforma</th><th>Status</th><th>O que importa</th></tr></thead>
+    <tbody></tbody>
+  </table></div>
+</section>
+
+<!-- ===================================================== NECESSIDADES -->
+<section class="page" id="necessidades">
+  <h2>Necessidades: licenças, papéis, rede e dados</h2>
+  <h3>Licenças e capacidade</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Item</th><th>Necessário para</th><th>Observação</th></tr></thead>
+    <tbody>
+      <tr><td>Azure Databricks <strong>Premium</strong></td><td>Unity Catalog e controles de acesso</td><td>Requisito do guia oficial de setup do Unity Catalog.</td></tr>
+      <tr><td>Capacidade <strong>Fabric</strong> (F SKU ou trial)</td><td>Mirroring, lakehouse, SQL endpoint</td><td>Pause/resume, trusted workspace access e managed private endpoints exigem F SKU. Trial expirado para o mirroring.</td></tr>
+      <tr><td>M365 <strong>E3/E5</strong></td><td>Rótulos de sensibilidade (protection policies)</td><td>Rótulo precisa ter escopo "Files &amp; other data assets" e configuração de controle de acesso para protection policies.</td></tr>
+      <tr><td>M365 <strong>E5</strong>, E5 Compliance, E5 IP&amp;G ou <strong>Purview capacities</strong></td><td>DLP para Fabric e Power BI</td><td>Licença atribuída ao admin que configura. A avaliação de DLP consome capacidade.</td></tr>
+      <tr><td>Conta Purview com Data Map</td><td>Scan do Unity Catalog no Purview</td><td>Só se já existir: não há criação de contas novas.</td></tr>
+    </tbody>
+  </table></div>
+  <h3>Papéis e permissões</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Papel</th><th>Onde</th><th>Para quê</th></tr></thead>
+    <tbody>
+      <tr><td>Account admin</td><td>Databricks account console</td><td>Metastore, atribuição de metastore admin, grupos, system tables</td></tr>
+      <tr><td>Metastore admin (grupo)</td><td>Unity Catalog</td><td>Ligar external data access, transferir posse de objetos</td></tr>
+      <tr><td>Workspace admin</td><td>Workspace Databricks</td><td>Compute, previews, service principals no workspace</td></tr>
+      <tr><td>Admin/Member do workspace Fabric</td><td>Fabric</td><td>Criar item espelhado, conexões, OneLake security</td></tr>
+      <tr><td>Capacity admin / RBAC na capacidade</td><td>Fabric / Azure</td><td>Pausar, retomar, redimensionar</td></tr>
+      <tr><td>Compliance admin / Information Protection admin</td><td>Purview</td><td>Políticas de DLP, rótulos, protection policies</td></tr>
+      <tr><td>Fabric admin</td><td>Admin portal</td><td>Habilitar "Allow users to apply sensitivity labels for content"</td></tr>
+    </tbody>
+  </table></div>
+  <h3>Identidade, rede e dados</h3>
+  <div class="grid c3">
+    <div class="card az"><h4>Identidade</h4><ul class="tight small">
+      <li>Grupos do Entra ID sincronizados com a conta Databricks</li>
+      <li>Service principal para a conexão do mirroring</li>
+      <li>Access Connector (managed identity) para o storage</li>
+      <li>Segredos no Key Vault; sem tokens pessoais</li>
+    </ul></div>
+    <div class="card az"><h4>Rede</h4><ul class="tight small">
+      <li>Decidir: front-end público ou private link</li>
+      <li>Se fechado: VNet data gateway (Fabric) e Managed VNet IR (Purview)</li>
+      <li>Firewall do storage: liberar Workspace Identity do Fabric</li>
+    </ul></div>
+    <div class="card az"><h4>Dados</h4><ul class="tight small">
+      <li>Amostras sintéticas ou anonimizadas</li>
+      <li>Mistura de formatos e qualidades (escaneado ruim, DOCX, PPTX, imagem)</li>
+      <li>CPFs fictícios para testar DLP</li>
+      <li>Alinhamento com o DPO antes de qualquer dado real</li>
+    </ul></div>
+  </div>
+</section>
+
+<!-- ===================================================== CASOS -->
+<section class="page" id="casos">
+  <h2>Casos de uso</h2>
+  <p class="lead">Casos <strong>didáticos</strong>, montados com os fatos verificados. Não encontrei estudo de caso público detalhado desta combinação para documentos; use estes como roteiro de conversa.</p>
+  <div class="grid c2" id="cases"></div>
+</section>
+
+<!-- ===================================================== CENÁRIOS -->
+<section class="page" id="cenarios">
+  <h2>Cenários e decisões</h2>
+  <p class="lead">Marque as condições do cliente. O guia monta as recomendações, os riscos e o que validar.</p>
+  <form class="picker" id="picker">
+    <fieldset><legend>Rede</legend>
+      <label><input type="radio" name="rede" value="aberta" checked> Front-end público permitido</label>
+      <label><input type="radio" name="rede" value="fechada"> Private endpoint obrigatório</label>
+    </fieldset>
+    <fieldset><legend>Licença Microsoft 365</legend>
+      <label><input type="radio" name="lic" value="e5" checked> E5 / E5 Compliance / Purview capacities</label>
+      <label><input type="radio" name="lic" value="e3"> E3 (rótulos, sem DLP para Fabric)</label>
+      <label><input type="radio" name="lic" value="nenhuma"> Sem licença de proteção</label>
+    </fieldset>
+    <fieldset><legend>Purview governança</legend>
+      <label><input type="radio" name="dm" value="nao" checked> Sem conta Data Map</label>
+      <label><input type="radio" name="dm" value="sim"> Já tem conta Data Map / Unified Catalog</label>
+    </fieldset>
+    <fieldset><legend>Consumo final</legend>
+      <label><input type="radio" name="cons" value="fabric" checked> Fabric / Power BI</label>
+      <label><input type="radio" name="cons" value="dbx"> Fica no Databricks</label>
+      <label><input type="radio" name="cons" value="rag"> Busca / agente (RAG)</label>
+    </fieldset>
+    <fieldset><legend>Sensibilidade dos documentos</legend>
+      <label><input type="radio" name="pii" value="alta" checked> Dados pessoais / sensíveis (LGPD)</label>
+      <label><input type="radio" name="pii" value="baixa"> Sem dados pessoais</label>
+    </fieldset>
+    <fieldset><legend>Volume e formato</legend>
+      <label><input type="checkbox" name="grande" value="1"> Documentos acima de 500 páginas ou 100 MB</label>
+      <label><input type="checkbox" name="escaneado" value="1"> Muitos escaneados / baixa qualidade</label>
+      <label><input type="checkbox" name="externo" value="1"> Outro sistema grava os arquivos no storage</label>
+    </fieldset>
+  </form>
+  <div id="scenario-out"></div>
+</section>
+
+<!-- ===================================================== RISCOS -->
+<section class="page" id="riscos">
+  <h2>Riscos, lacunas e atalhos ruins</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Risco / atalho</th><th>Por que é ruim</th><th>Mitigação</th></tr></thead>
+    <tbody>
+      <tr><td>Conexão do mirroring com conta de admin</td><td>Todas as consultas usam essa credencial; o Fabric enxerga tudo</td><td>Service principal com <code>SELECT</code> + <code>EXTERNAL USE SCHEMA</code> só na gold de consumo</td></tr>
+      <tr><td>Achar que grants do Unity Catalog valem no Fabric</td><td>Não são espelhados</td><td>OneLake security com os mesmos grupos; revisão periódica dos dois lados</td></tr>
+      <tr><td>Arquivos brutos com PII no Volume</td><td>DLP do Purview não inspeciona</td><td>Grants mínimos no volume, retenção definida, auditoria por system tables</td></tr>
+      <tr><td>Trusted workspace access em storage com dados filtrados</td><td>Contorna RLS/CLM/ABAC do Unity Catalog</td><td>Publicar só tabelas já filtradas/anonimizadas</td></tr>
+      <tr><td>Reprocessar tudo a cada execução</td><td>Custo de AI Functions cresce com o acervo</td><td>Pipeline incremental (M4)</td></tr>
+      <tr><td>Confiar 100% na extração</td><td>LLMs erram</td><td>Score de confiança, fila de revisão, amostragem humana</td></tr>
+      <tr><td>Investir em Purview Data Map novo</td><td>Aposentadoria; sem contas novas</td><td>OneLake catalog + Unity Catalog</td></tr>
+      <tr><td>Volume external na raiz da external location</td><td>Bloqueia novos objetos na mesma location</td><td>Criar em subdiretórios</td></tr>
+      <tr><td>Dados reais de cliente no lab</td><td>LGPD e contrato</td><td>Sintéticos/anonimizados; DPO no circuito</td></tr>
+      <tr><td>Lab em assinatura de produção sem isolamento</td><td>Custo e permissões misturados</td><td>RG dedicado, tags, budget, RBAC mínimo</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ===================================================== CLIENTE -->
+<section class="page" id="cliente">
+  <h2>Levando ao cliente</h2>
+  <h3>Perguntas de descoberta</h3>
+  <div class="grid c2">
+    <div class="card"><h4>Negócio e dados</h4><ul class="tight small">
+      <li>Quais tipos de documento, volume mensal e tamanho médio?</li>
+      <li>Qual decisão ou relatório depende desses documentos?</li>
+      <li>Há dados pessoais, sensíveis ou sigilosos? Qual base legal?</li>
+      <li>Quanto erro de extração é aceitável? Quem revisa exceções?</li>
+    </ul></div>
+    <div class="card"><h4>Plataforma</h4><ul class="tight small">
+      <li>Unity Catalog ativo? Metastore por região? Quem é metastore admin?</li>
+      <li>Consumo final no Fabric/Power BI ou no Databricks?</li>
+      <li>Capacidade Fabric (SKU) e dono da capacidade?</li>
+      <li>Há conta Purview com Data Map? Plano de transição?</li>
+    </ul></div>
+    <div class="card"><h4>Segurança e compliance</h4><ul class="tight small">
+      <li>Licença para rótulos e DLP no Fabric?</li>
+      <li>Taxonomia de rótulos já publicada?</li>
+      <li>Requisitos de auditoria e retenção?</li>
+      <li>Quem aprova acesso a dados sensíveis?</li>
+    </ul></div>
+    <div class="card"><h4>Rede e identidade</h4><ul class="tight small">
+      <li>Acesso público permitido? Private endpoints obrigatórios?</li>
+      <li>Grupos do Entra ID por função já existem?</li>
+      <li>Política para service principals e segredos?</li>
+      <li>Storage com firewall?</li>
+    </ul></div>
+  </div>
+  <h3>Roteiro de entrega (por dependência)</h3>
+  <ol class="steps">
+    <li><span class="where">Descoberta</span><br>Checklist do M0 no ambiente do cliente + perguntas acima.<span class="expect">matriz de dependências com dono.</span></li>
+    <li><span class="where">Fundação</span><br>Catálogo, schemas, grupos, posse por grupo, volume de pouso.<span class="expect">grants revisados com o cliente.</span></li>
+    <li><span class="where">Prova de valor</span><br>Extração em uma amostra aprovada pelo DPO, fila de revisão e métrica de qualidade.<span class="expect">números de qualidade e custo por documento.</span></li>
+    <li><span class="where">Consumo</span><br>Gold de consumo sem PII espelhada no Fabric, relatório.<span class="expect">usuário de negócio consultando sem cópia.</span></li>
+    <li><span class="where">Proteção</span><br>OneLake security, rótulos, DLP em modo teste → enforcement, Audit.<span class="expect">matriz "onde cada controle atua" assinada.</span></li>
+    <li><span class="where">Operação</span><br>Pipeline incremental, monitoramento de custo, runbook de desligamento.<span class="expect">handover para o time do cliente.</span></li>
+  </ol>
+  <div class="callout"><strong>Mensagem de 30 segundos</strong><p>"O Databricks transforma documentos em dados com IA e governa o acesso no Unity Catalog. O Fabric consome esses dados sem cópia. O Purview protege o que chega ao Fabric com rótulos, DLP e auditoria. A lacuna que tratamos por desenho é o arquivo bruto, protegido por permissão e não por DLP."</p></div>
+</section>
+
+<!-- ===================================================== GLOSSÁRIO -->
+<section class="page" id="glossario">
+  <h2>Glossário</h2>
+  <div class="table-wrap"><table>
+    <tbody>
+      <tr><td><strong>Metastore</strong></td><td>Contêiner de topo do Unity Catalog, um por região.</td></tr>
+      <tr><td><strong>Volume</strong></td><td>Objeto do Unity Catalog para arquivos (não tabulares) em storage de nuvem.</td></tr>
+      <tr><td><strong>External location</strong></td><td>Caminho de storage + storage credential registrados no Unity Catalog.</td></tr>
+      <tr><td><strong>External data access</strong></td><td>Opção do metastore que permite motores externos (como o Fabric) lerem dados do Unity Catalog.</td></tr>
+      <tr><td><strong>EXTERNAL USE SCHEMA</strong></td><td>Privilégio explícito para leitura externa de um schema.</td></tr>
+      <tr><td><strong>Mirroring do catálogo</strong></td><td>Item do Fabric que espelha metadados do Unity Catalog e lê os dados via shortcut.</td></tr>
+      <tr><td><strong>Shortcut</strong></td><td>Atalho do OneLake para dados em outro local, sem cópia.</td></tr>
+      <tr><td><strong>OneLake security</strong></td><td>Roles de acesso a tabelas/pastas (com RLS/CLS) aplicadas pelos motores do Fabric.</td></tr>
+      <tr><td><strong>Rótulo de sensibilidade</strong></td><td>Classificação do Purview Information Protection que acompanha o item e exportações.</td></tr>
+      <tr><td><strong>DLP</strong></td><td>Políticas que detectam dados sensíveis e alertam ou restringem.</td></tr>
+      <tr><td><strong>SCC</strong></td><td>Secure Cluster Connectivity: clusters sem IP público.</td></tr>
+      <tr><td><strong>VNet data gateway</strong></td><td>Gateway gerenciado em VNet do cliente que leva o Fabric até recursos privados.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ===================================================== FONTES -->
+<section class="page" id="fontes">
+  <h2>Fontes</h2>
+  <p class="lead">Documentação oficial consultada em 18/11/2026.</p>
+  <h4>Databricks (Microsoft Learn)</h4>
+  <ul class="tight small">
+    <li><a href="https://learn.microsoft.com/azure/databricks/data-governance/unity-catalog/" target="_blank" rel="noopener">What is Unity Catalog?</a></li>
+    <li><a href="https://learn.microsoft.com/azure/databricks/data-governance/unity-catalog/setup-uc" target="_blank" rel="noopener">Unity Catalog setup guide</a></li>
+    <li><a href="https://learn.microsoft.com/azure/databricks/data-governance/unity-catalog/best-practices" target="_blank" rel="noopener">Unity Catalog best practices</a></li>
+    <li><a href="https://learn.microsoft.com/azure/databricks/data-governance/unity-catalog/manage-privileges/admin-privileges" target="_blank" rel="noopener">Admin privileges in Unity Catalog</a></li>
+    <li><a href="https://learn.microsoft.com/azure/databricks/volumes/" target="_blank" rel="noopener">What are Unity Catalog volumes?</a></li>
+    <li><a href="https://learn.microsoft.com/azure/databricks/volumes/privileges" target="_blank" rel="noopener">Privileges for Unity Catalog volumes</a></li>
+    <li><a href="https://learn.microsoft.com/azure/databricks/sql/language-manual/functions/ai_parse_document" target="_blank" rel="noopener">ai_parse_document</a></li>
+    <li><a href="https://learn.microsoft.com/azure/databricks/sql/language-manual/functions/ai_extract" target="_blank" rel="noopener">ai_extract</a></li>
+    <li><a href="https://learn.microsoft.com/azure/databricks/sql/language-manual/functions/ai_prep_search" target="_blank" rel="noopener">ai_prep_search</a></li>
+    <li><a href="https://learn.microsoft.com/azure/databricks/agents/agent-bricks/intelligent-document-processing" target="_blank" rel="noopener">Intelligent document processing</a></li>
+    <li><a href="https://learn.microsoft.com/azure/databricks/ai-search/ai-search" target="_blank" rel="noopener">Databricks AI Search</a></li>
+    <li><a href="https://learn.microsoft.com/azure/databricks/jobs/file-arrival-triggers" target="_blank" rel="noopener">Trigger jobs when new files arrive</a></li>
+    <li><a href="https://learn.microsoft.com/azure/databricks/external-access/admin" target="_blank" rel="noopener">Enable external data access to Unity Catalog</a></li>
+    <li><a href="https://learn.microsoft.com/azure/databricks/partners/bi/fabric-publish" target="_blank" rel="noopener">Publish a Unity Catalog catalog to Microsoft Fabric</a></li>
+    <li><a href="https://learn.microsoft.com/azure/databricks/resources/feature-region-support" target="_blank" rel="noopener">Features with limited regional availability</a></li>
+  </ul>
+  <h4>Fabric</h4>
+  <ul class="tight small">
+    <li><a href="https://learn.microsoft.com/fabric/mirroring/azure-databricks-tutorial" target="_blank" rel="noopener">Tutorial: mirror from Azure Databricks Unity Catalog</a></li>
+    <li><a href="https://learn.microsoft.com/fabric/mirroring/azure-databricks-security" target="_blank" rel="noopener">Secure Fabric mirrored databases from Azure Databricks</a></li>
+    <li><a href="https://learn.microsoft.com/fabric/mirroring/azure-databricks-private-endpoint" target="_blank" rel="noopener">Connect to Azure Databricks workspaces behind a private endpoint</a></li>
+    <li><a href="https://community.fabric.microsoft.com/t5/Fabric-Updates-Blog/Mirroring-Azure-Databricks-catalogs-from-Azure-Databricks/ba-p/5172345" target="_blank" rel="noopener">Fabric Updates Blog: mirroring behind private endpoints (GA)</a></li>
+    <li><a href="https://learn.microsoft.com/fabric/onelake/security/data-access-control-model" target="_blank" rel="noopener">How OneLake security controls data access</a></li>
+    <li><a href="https://learn.microsoft.com/fabric/onelake/security/create-manage-roles" target="_blank" rel="noopener">Create and manage OneLake security roles</a></li>
+    <li><a href="https://learn.microsoft.com/fabric/governance/onelake-catalog-overview" target="_blank" rel="noopener">OneLake catalog overview</a></li>
+    <li><a href="https://learn.microsoft.com/fabric/enterprise/pause-resume" target="_blank" rel="noopener">Pause and resume your Fabric capacity</a></li>
+    <li><a href="https://learn.microsoft.com/fabric/enterprise/fabric-features" target="_blank" rel="noopener">Fabric features by SKU</a></li>
+    <li><a href="https://learn.microsoft.com/fabric/mirroring/troubleshooting" target="_blank" rel="noopener">Troubleshoot Fabric mirrored databases</a></li>
+  </ul>
+  <h4>Purview</h4>
+  <ul class="tight small">
+    <li><a href="https://learn.microsoft.com/fabric/governance/microsoft-purview-fabric" target="_blank" rel="noopener">Use Microsoft Purview to protect Microsoft Fabric</a></li>
+    <li><a href="https://learn.microsoft.com/purview/dlp-powerbi-get-started" target="_blank" rel="noopener">Get started with DLP for Fabric and Power BI</a></li>
+    <li><a href="https://learn.microsoft.com/fabric/governance/data-loss-prevention-configure" target="_blank" rel="noopener">Configure DLP policies for Fabric</a></li>
+    <li><a href="https://learn.microsoft.com/fabric/governance/protection-policies-overview" target="_blank" rel="noopener">Protection policies in Microsoft Fabric</a></li>
+    <li><a href="https://learn.microsoft.com/purview/register-scan-azure-databricks-unity-catalog" target="_blank" rel="noopener">Connect to and manage Azure Databricks Unity Catalog in Purview</a></li>
+    <li><a href="https://learn.microsoft.com/purview/data-map" target="_blank" rel="noopener">Purview Data Map overview (aviso de aposentadoria)</a></li>
+  </ul>
+  <h4>Referências de arquitetura</h4>
+  <ul class="tight small">
+    <li><a href="https://learn.microsoft.com/azure/architecture/solution-ideas/articles/azure-databricks-modern-analytics-architecture" target="_blank" rel="noopener">Modern analytics architecture with Azure Databricks</a></li>
+    <li><a href="https://github.com/microsoft/unified-data-foundation-with-fabric-solution-accelerator" target="_blank" rel="noopener">Unified Data Foundation with Fabric (solution accelerator)</a></li>
+  </ul>
+  <footer>Guia de estudo independente. Não é documentação oficial da Microsoft ou da Databricks. Verifique status e licenças na fonte antes de decisões contratuais.</footer>
+</section>
+
+</main>
+</div>
+<div class="toast" id="toast"></div>
+<script src="app.js"></script>
+</body>
+</html>
